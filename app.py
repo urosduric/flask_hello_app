@@ -12,6 +12,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 import sys
+from some_data import ASSET_CLASSES, REGIONS, MARKET_TYPES
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
@@ -513,44 +514,136 @@ def get_benchmarks():
 @app.route('/new_benchmark', methods=['GET', 'POST'])
 @login_required
 def new_benchmark():
+    # Load risk factors once at the beginning
+    risk_factors = RiskFactor.query.order_by(RiskFactor.name).all()
+    
+    # Prepare form options
+    form_options = {
+        'asset_classes': ASSET_CLASSES,
+        'regions': REGIONS,
+        'market_types': MARKET_TYPES
+    }
+    
     if request.method == 'POST':
-        benchmark_name = request.form.get('benchmark_name')
+        # Get form data
+        benchmark_name = request.form.get('benchmark_name', '').strip()
         risk_factor_id = request.form.get('risk_factor_id')
         beta = request.form.get('beta')
         mod_duration = request.form.get('mod_duration')
         fx = request.form.get('fx')
         usd = request.form.get('usd')
         us = request.form.get('us')
-        asset_class = request.form.get('asset_class')
-        region = request.form.get('region')
-        developed = request.form.get('developed')
+        asset_class = request.form.get('asset_class', '').strip()
+        region = request.form.get('region', '').strip()
+        developed = request.form.get('developed', '').strip()
 
+        # Validate all required fields
         if not benchmark_name:
-            return render_template('new_benchmark.html', error='Benchmark name is required')
+            return render_template('new_benchmark.html', 
+                                risk_factors=risk_factors,
+                                form_options=form_options,
+                                error='Benchmark name is required')
 
-        new_benchmark = Benchmark(
-            benchmark_name=benchmark_name,
-            risk_factor_id=risk_factor_id if risk_factor_id else None,
-            beta=float(beta) if beta else None,
-            mod_duration=float(mod_duration) if mod_duration else None,
-            fx=float(fx) if fx else None,
-            usd=float(usd) if usd else None,
-            us=float(us) if us else None,
-            asset_class=asset_class,
-            region=region,
-            developed=developed,
-            user_id=current_user.id,
-            generic_benchmark=0,
-            created_at=datetime.utcnow()
-        )
+        if not risk_factor_id:
+            return render_template('new_benchmark.html', 
+                                risk_factors=risk_factors,
+                                form_options=form_options,
+                                error='Risk factor must be selected')
 
-        db.session.add(new_benchmark)
-        db.session.commit()
+        if not asset_class or asset_class not in ASSET_CLASSES:
+            return render_template('new_benchmark.html', 
+                                risk_factors=risk_factors,
+                                form_options=form_options,
+                                error='Asset class must be selected')
 
-        return redirect(url_for('get_benchmarks'))
+        if not region or region not in REGIONS:
+            return render_template('new_benchmark.html', 
+                                risk_factors=risk_factors,
+                                form_options=form_options,
+                                error='Region must be selected')
 
-    risk_factors = RiskFactor.query.all()
-    return render_template('new_benchmark.html', risk_factors=risk_factors)
+        if not developed or developed not in MARKET_TYPES:
+            return render_template('new_benchmark.html', 
+                                risk_factors=risk_factors,
+                                form_options=form_options,
+                                error='Market type must be selected')
+
+        # Validate numerical fields
+        try:
+            beta = float(beta) if beta else None
+            if beta is None:
+                return render_template('new_benchmark.html', 
+                                    risk_factors=risk_factors,
+                                    form_options=form_options,
+                                    error='Beta is required and must be a valid number')
+            
+            mod_duration = float(mod_duration) if mod_duration else None
+            if mod_duration is None:
+                return render_template('new_benchmark.html', 
+                                    risk_factors=risk_factors,
+                                    form_options=form_options,
+                                    error='Modified duration is required and must be a valid number')
+            
+            fx = float(fx) if fx else None
+            if fx is None:
+                return render_template('new_benchmark.html', 
+                                    risk_factors=risk_factors,
+                                    form_options=form_options,
+                                    error='FX is required and must be a valid number')
+            
+            usd = float(usd) if usd else None
+            if usd is None:
+                return render_template('new_benchmark.html', 
+                                    risk_factors=risk_factors,
+                                    form_options=form_options,
+                                    error='USD is required and must be a valid number')
+            
+            us = float(us) if us else None
+            if us is None:
+                return render_template('new_benchmark.html', 
+                                    risk_factors=risk_factors,
+                                    form_options=form_options,
+                                    error='US is required and must be a valid number')
+        except ValueError:
+            return render_template('new_benchmark.html', 
+                                risk_factors=risk_factors,
+                                form_options=form_options,
+                                error='All numerical fields must be valid numbers')
+
+        # Create new benchmark
+        try:
+            new_benchmark = Benchmark(
+                benchmark_name=benchmark_name,
+                risk_factor_id=risk_factor_id,
+                beta=beta,
+                mod_duration=mod_duration,
+                fx=fx,
+                usd=usd,
+                us=us,
+                asset_class=asset_class,
+                region=region,
+                developed=developed,
+                user_id=current_user.id,
+                generic_benchmark=0,  # Default to False
+                created_at=datetime.utcnow()
+            )
+
+            db.session.add(new_benchmark)
+            db.session.commit()
+            flash('Benchmark created successfully', 'success')
+            return redirect(url_for('get_benchmarks'))
+
+        except Exception as e:
+            db.session.rollback()
+            return render_template('new_benchmark.html', 
+                                risk_factors=risk_factors,
+                                form_options=form_options,
+                                error=f'An error occurred: {str(e)}')
+
+    # GET request - show form
+    return render_template('new_benchmark.html', 
+                         risk_factors=risk_factors,
+                         form_options=form_options)
 
 @app.route('/delete_benchmark/<int:id>', methods=['GET'])
 def delete_benchmark(id):
