@@ -29,7 +29,8 @@ def load_user(user_id):
 # User Model
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    name = db.Column(db.String(80), nullable=False)
     password_hash = db.Column(db.String(128))
     user_type = db.Column(db.String(20), default='beginner')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -52,7 +53,8 @@ class User(UserMixin, db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'username': self.username,
+            'email': self.email,
+            'name': self.name,
             'user_type': self.user_type,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }
@@ -271,21 +273,21 @@ def login():
         return redirect(url_for('get_portfolios'))
         
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
         
-        if not username or not password:
-            flash('Username and password are required', 'error')
-            return render_template('login.html', error='Username and password are required')
+        if not email or not password:
+            flash('Email and password are required', 'error')
+            return render_template('login.html', error='Email and password are required')
         
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(email=email).first()
         if user is None:
-            flash('Invalid username or password', 'error')
-            return render_template('login.html', error='Invalid username or password')
+            flash('Invalid email or password', 'error')
+            return render_template('login.html', error='Invalid email or password')
             
         if not user.check_password(password):
-            flash('Invalid username or password', 'error')
-            return render_template('login.html', error='Invalid username or password')
+            flash('Invalid email or password', 'error')
+            return render_template('login.html', error='Invalid email or password')
         
         login_user(user)
         return redirect(url_for('get_portfolios'))
@@ -312,31 +314,47 @@ def get_users():
 @login_required
 def edit_profile():
     if request.method == 'POST':
-        current_password = request.form.get('current_password')
-        
-        if not current_user.check_password(current_password):
-            return render_template('edit_profile.html', user=current_user, error='Current password is incorrect')
-        
-        email = request.form.get('email')
-        new_password = request.form.get('new_password')
-        birthday = request.form.get('birthday')
+        form_type = request.form.get('form_type')
         
         try:
-            if email != current_user.email:
-                if User.query.filter_by(email=email).first() is not None:
-                    return render_template('edit_profile.html', user=current_user, error='Email already in use')
-                current_user.email = email
-            
-            if new_password:
-                current_user.set_password(new_password)
+            if form_type == 'name':
+                name = request.form.get('name')
+                if name:
+                    current_user.name = name
+                    db.session.commit()
+                    return render_template('edit_profile.html', user=current_user, success='Name updated successfully')
                 
-            if birthday:
-                current_user.birthday = datetime.strptime(birthday, '%Y-%m-%d').date()
-            else:
-                current_user.birthday = None
+            elif form_type == 'email':
+                current_password = request.form.get('current_password')
+                if not current_user.check_password(current_password):
+                    return render_template('edit_profile.html', user=current_user, error='Current password is incorrect')
+                
+                email = request.form.get('email')
+                if email and email != current_user.email:
+                    if User.query.filter_by(email=email).first() is not None:
+                        return render_template('edit_profile.html', user=current_user, error='Email already in use')
+                    current_user.email = email
+                    db.session.commit()
+                    return render_template('edit_profile.html', user=current_user, success='Email updated successfully')
+                
+            elif form_type == 'password':
+                current_password = request.form.get('current_password')
+                if not current_user.check_password(current_password):
+                    return render_template('edit_profile.html', user=current_user, error='Current password is incorrect')
+                
+                new_password = request.form.get('new_password')
+                confirm_password = request.form.get('confirm_password')
+                
+                if not new_password or not confirm_password:
+                    return render_template('edit_profile.html', user=current_user, error='New password and confirmation are required')
+                
+                if new_password != confirm_password:
+                    return render_template('edit_profile.html', user=current_user, error='New passwords do not match')
+                
+                current_user.set_password(new_password)
+                db.session.commit()
+                return render_template('edit_profile.html', user=current_user, success='Password updated successfully')
             
-            db.session.commit()
-            return render_template('edit_profile.html', user=current_user, success='Profile updated successfully')
         except Exception as e:
             db.session.rollback()
             return render_template('edit_profile.html', user=current_user, error=str(e))
@@ -366,17 +384,21 @@ def register():
         return redirect(url_for('get_portfolios'))
         
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
         
-        if not username or not password:
-            return render_template('register.html', error='Username and password are required')
+        if not email or not password:
+            return render_template('register.html', error='Email and password are required')
         
-        if User.query.filter_by(username=username).first() is not None:
-            return render_template('register.html', error='Username already exists')
+        if User.query.filter_by(email=email).first() is not None:
+            return render_template('register.html', error='Email already exists')
         
         try:
-            user = User(username=username, user_type='beginner')
+            user = User(
+                email=email,
+                name=email.split('@')[0],  # Set name to the part before @ in email
+                user_type='beginner'
+            )
             user.set_password(password)
             db.session.add(user)
             db.session.flush()  # This gets us the user.id
