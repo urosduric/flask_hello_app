@@ -8,12 +8,33 @@ import os
 import pandas as pd
 from flask_login import login_user, logout_user, LoginManager, current_user
 from flask_login import UserMixin
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
+import sys
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///risk_management.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # Session lifetime for "remember me"
+app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookie over HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+app.config['WTF_CSRF_ENABLED'] = True  # Enable CSRF protection
+
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
+
+# Add security headers
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager()
@@ -21,6 +42,13 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
+
+# Add rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -268,6 +296,7 @@ def home():
     return redirect(url_for('register'))
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")  # Rate limit login attempts
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('get_portfolios'))
@@ -277,21 +306,60 @@ def login():
         password = request.form.get('password')
         remember = request.form.get('remember') == 'on'
         
+        # Basic validation
         if not email or not password:
-            flash('Email and password are required', 'error')
             return render_template('login.html', error='Email and password are required')
         
-        user = User.query.filter_by(email=email).first()
-        if user is None:
-            flash('Invalid email or password', 'error')
-            return render_template('login.html', error='Invalid email or password')
+        try:
+            user = User.query.filter_by(email=email).first()
             
-        if not user.check_password(password):
-            flash('Invalid email or password', 'error')
-            return render_template('login.html', error='Invalid email or password')
-        
-        login_user(user, remember=remember)
-        return redirect(url_for('get_portfolios'))
+            # Check if user exists and password is correct
+            if user is None or not user.check_password(password):
+                # Log failed attempt in database
+                failed_attempt = LoginAttempt(
+                    email=email,
+                    ip_address=request.remote_addr,
+                    timestamp=datetime.utcnow()
+                )
+                db.session.add(failed_attempt)
+                db.session.commit()
+                
+                # Check for too many failed attempts
+                recent_attempts = LoginAttempt.query.filter(
+                    LoginAttempt.email == email,
+                    LoginAttempt.ip_address == request.remote_addr,
+                    LoginAttempt.timestamp > datetime.utcnow() - timedelta(minutes=15)
+                ).count()
+                
+                if recent_attempts >= 5:
+                    return render_template('login.html', error='Too many failed attempts. Please try again later.')
+                
+                return render_template('login.html', error='Invalid email or password')
+            
+            # Set remember me duration
+            remember_duration = timedelta(days=30) if remember else timedelta(hours=1)
+            
+            # Login user
+            login_user(user, remember=remember, duration=remember_duration)
+            
+            # Set session as permanent if remember me is checked
+            if remember:
+                session.permanent = True
+            
+            # Clear any failed attempts for this user
+            LoginAttempt.query.filter_by(email=email).delete()
+            db.session.commit()
+            
+            # Redirect to next page if specified
+            next_page = request.args.get('next')
+            if not next_page or not next_page.startswith('/'):
+                next_page = url_for('get_portfolios')
+            
+            return redirect(next_page)
+            
+        except Exception as e:
+            db.session.rollback()
+            return render_template('login.html', error='An error occurred during login. Please try again.')
     
     return render_template('login.html')
 
@@ -370,14 +438,33 @@ def register():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
         
-        if not email or not password:
-            return render_template('register.html', error='Email and password are required')
+        # Basic validation
+        if not email or not password or not confirm_password:
+            return render_template('register.html', error='All fields are required')
         
+        # Password confirmation check
+        if password != confirm_password:
+            return render_template('register.html', error='Passwords do not match')
+        
+        # Password strength validation
+        if len(password) < 8:
+            return render_template('register.html', error='Password must be at least 8 characters long')
+        
+        # Email format validation
+        if not '@' in email or not '.' in email:
+            return render_template('register.html', error='Invalid email format')
+        
+        # Check for existing email
         if User.query.filter_by(email=email).first() is not None:
             return render_template('register.html', error='Email already exists')
         
         try:
+            # Start transaction
+            db.session.begin_nested()
+            
+            # Create user
             user = User(
                 email=email,
                 name=email.split('@')[0],  # Set name to the part before @ in email
@@ -394,12 +481,16 @@ def register():
                 is_default=1
             )
             db.session.add(default_portfolio)
+            
+            # Commit transaction
             db.session.commit()
             
             # Log in the user automatically
             login_user(user)
             return redirect(url_for('get_portfolios'))
+            
         except Exception as e:
+            # Rollback transaction on error
             db.session.rollback()
             return render_template('register.html', error='An error occurred during registration. Please try again.')
     
@@ -964,8 +1055,94 @@ def kill_app():
     func()
     return 'Server shutting down...'
 
+@app.route('/delete_profile', methods=['POST'])
+@login_required
+def delete_profile():
+    try:
+        # Start a transaction
+        db.session.begin_nested()
+        
+        # 1. Delete all holdings
+        Holding.query.filter_by(user_id=current_user.id).delete()
+        
+        # 2. Delete all portfolios
+        Portfolio.query.filter_by(user_id=current_user.id).delete()
+        
+        # 3. Delete all funds
+        Fund.query.filter_by(user_id=current_user.id).delete()
+        
+        # 4. Delete all benchmarks
+        Benchmark.query.filter_by(user_id=current_user.id).delete()
+        
+        # 5. Delete the user
+        db.session.delete(current_user)
+        
+        # Commit the transaction
+        db.session.commit()
+        
+        # Log out the user
+        logout_user()
+        
+        # Clear session
+        session.clear()
+        
+        flash('Your profile and all associated data have been deleted successfully.', 'success')
+        return redirect(url_for('register'))
+        
+    except Exception as e:
+        # Rollback in case of error
+        db.session.rollback()
+        flash('An error occurred while deleting your profile. Please try again.', 'error')
+        return redirect(url_for('edit_profile'))
+
+# Add LoginAttempt model for tracking failed login attempts
+class LoginAttempt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False)
+    ip_address = db.Column(db.String(45), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<LoginAttempt {self.email} at {self.timestamp}>'
+
+# Add password reset routes
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        if not email:
+            flash('Email is required', 'error')
+            return render_template('forgot_password.html')
+            
+        user = User.query.filter_by(email=email).first()
+        if user:
+            # In a real application, you would:
+            # 1. Generate a secure token
+            # 2. Store it in the database with an expiration time
+            # 3. Send a password reset email
+            flash('If an account exists with this email, you will receive password reset instructions.', 'info')
+        else:
+            # Don't reveal whether the email exists or not
+            flash('If an account exists with this email, you will receive password reset instructions.', 'info')
+            
+        return redirect(url_for('login'))
+        
+    return render_template('forgot_password.html')
+
 if __name__ == '__main__':
     with app.app_context():
         # Create all tables
         db.create_all()
-        app.run(debug=True, host='0.0.0.0', port=5004)
+        # Allow port to be set via environment variable or command-line argument
+        port = 5004
+        if len(sys.argv) > 1:
+            try:
+                port = int(sys.argv[1])
+            except ValueError:
+                pass
+        elif os.environ.get('PORT'):
+            try:
+                port = int(os.environ.get('PORT'))
+            except ValueError:
+                pass
+        app.run(debug=True, host='0.0.0.0', port=port)

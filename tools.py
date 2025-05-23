@@ -6,7 +6,9 @@ kill -9 $(lsof -t -i:5004)
 
 # To run the app in the terminal
 '''
-python app.py
+cd /Users/urosduric/flask_hello_app
+source venv/bin/activate
+python app.py 5005     
 '''
 
 # send to github

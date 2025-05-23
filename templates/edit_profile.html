@@ -81,6 +81,45 @@
         </div>
     </div>
 
+    <!-- Add this after your existing form -->
+    <div class="mt-4 pt-4 border-top">
+        <h4 class="text-danger mb-3">Danger Zone</h4>
+        <p class="text-muted mb-3">Once you delete your profile, there is no going back. Please be certain.</p>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteProfileModal">
+            <i class="fas fa-trash-alt me-2"></i>Delete Profile
+        </button>
+    </div>
+
+    <!-- Delete Profile Modal -->
+    <div class="modal fade" id="deleteProfileModal" tabindex="-1" aria-labelledby="deleteProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteProfileModalLabel">Delete Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
+                    <p>This will permanently delete:</p>
+                    <ul>
+                        <li>Your user account</li>
+                        <li>All your portfolios</li>
+                        <li>All your funds</li>
+                        <li>All your benchmarks</li>
+                        <li>All your holdings</li>
+                    </ul>
+                    <p>Are you absolutely sure you want to delete your profile?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('delete_profile') }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger">Yes, Delete My Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% if error %}
     <div class="alert alert-danger mt-3">{{ error }}</div>
     {% endif %}
