@@ -3,34 +3,118 @@
 {% block title %}Upload Data - {{ risk_factor.name }}{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h2>Upload Performance Data</h2>
-    <h4 class="text-muted">{{ risk_factor.name }}</h4>
-    
-    {% if error %}
-    <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
-    
-    <div class="alert alert-info">
-        <h5>Upload Instructions:</h5>
-        <ul>
-            <li>File must be in CSV format</li>
-            <li>Required columns: 'date' and 'daily_return'</li>
-            <li>Date format: YYYY-MM-DD</li>
-            <li>Returns should be in percentage (e.g., 0.5 for 0.5%)</li>
-            <li>Existing data will be replaced</li>
-        </ul>
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Upload Performance Data</h2>
+        <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Risk Factor
+        </a>
     </div>
-    
-    <form method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="mb-3">
-            <label for="file" class="form-label">CSV File</label>
-            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title text-muted mb-4">{{ risk_factor.name }}</h4>
+                    
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Upload Instructions
+                        </h5>
+                        <ul class="mb-0">
+                            <li>File must be in CSV format</li>
+                            <li>Required columns: 'date' and 'daily_return'</li>
+                            <li>Date format: YYYY-MM-DD</li>
+                            <li>Returns should be in percentage (e.g., 0.5 for 0.5%)</li>
+                            <li>Existing data will be replaced</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="POST" enctype="multipart/form-data" class="mt-4">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-4">
+                            <label for="file" class="form-label">CSV File</label>
+                            <input type="file" class="form-control mb-3" id="file" name="file" accept=".csv" required>
+                            <div class="form-text mb-3">Maximum file size: 5MB</div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload me-2"></i>Upload Data
+                                </button>
+                                <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-outline-secondary">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        
-        <button type="submit" class="btn btn-primary">Upload Data</button>
-        <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
+
+<style>
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+.alert-info {
+    background-color: #e8f4f8;
+    color: var(--text-color);
+}
+
+.alert-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.alert ul {
+    padding-left: 1.2rem;
+}
+
+.alert ul li {
+    margin-bottom: 0.5rem;
+}
+
+.alert ul li:last-child {
+    margin-bottom: 0;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-text {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.btn-secondary {
+    background-color: var(--light-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+</style>
 {% endblock %} 
