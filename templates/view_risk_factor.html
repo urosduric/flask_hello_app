@@ -3,42 +3,141 @@
 {% block title %}{{ risk_factor.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>{{ risk_factor.name }}</h2>
-    {% if risk_factor.description %}
-    <p class="text-muted">{{ risk_factor.description }}</p>
-    {% endif %}
-    
-    <div class="mb-4">
-        <a href="{{ url_for('upload_risk_factor_data', id=risk_factor.id) }}" 
-           class="btn btn-primary">Upload Performance Data</a>
-        <a href="{{ url_for('get_risk_factors') }}" 
-           class="btn btn-secondary">Back to Risk Factors</a>
+<div class="container-fluid px-4">
+    <div class="card main-card">
+        <div class="card-body">
+            <div class="row">
+                <!-- Left Card - Details -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h4 class="card-title mb-4">{{ risk_factor.name }}</h4>
+                            {% if risk_factor.description %}
+                            <p class="text-muted mb-4">{{ risk_factor.description }}</p>
+                            {% endif %}
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('upload_risk_factor_data', id=risk_factor.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-upload me-2"></i>Upload Data
+                                </a>
+                                <a href="{{ url_for('get_risk_factors') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Risk Factors
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Card - Data Table -->
+                <div class="col-md-8">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-muted mb-3">Performance Data</h5>
+                            {% if data %}
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th class="text-end">Daily Return</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in data %}
+                                        <tr>
+                                            <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+                                            <td class="text-end">{{ "%.4f"|format(row.daily_return) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>No performance data available. Use the Upload button to add data.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    {% if data %}
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Daily Return (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for point in data %}
-                <tr>
-                    <td>{{ point.date.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ "%.2f"|format(point.daily_return) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="alert alert-info">
-        No performance data available. Use the Upload button to add data.
-    </div>
-    {% endif %}
 </div>
+
+<style>
+:root {
+    --border-color: #dee2e6;
+    --light-bg: #f8f9fa;
+    --text-color: #212529;
+    --text-muted: #6c757d;
+}
+
+.main-card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-top: 1rem;
+}
+
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.table-responsive {
+    max-height: 350px;
+    height: 350px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.table {
+    margin-bottom: 0;
+    width: 100%;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--light-bg);
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    z-index: 1;
+}
+
+.table tbody td {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background-color: var(--light-bg);
+}
+
+.alert-info {
+    background-color: #e8f4f8;
+    color: var(--text-color);
+    border: none;
+    border-radius: 8px;
+}
+
+.btn-secondary {
+    background-color: var(--light-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+.d-grid {
+    gap: 0.5rem;
+}
+</style>
 {% endblock %} 
