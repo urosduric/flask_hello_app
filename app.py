@@ -275,6 +275,7 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+        remember = request.form.get('remember') == 'on'
         
         if not email or not password:
             flash('Email and password are required', 'error')
@@ -289,7 +290,7 @@ def login():
             flash('Invalid email or password', 'error')
             return render_template('login.html', error='Invalid email or password')
         
-        login_user(user)
+        login_user(user, remember=remember)
         return redirect(url_for('get_portfolios'))
     
     return render_template('login.html')
@@ -930,6 +931,38 @@ def view_benchmark(id):
         return redirect(url_for('get_benchmarks'))
     
     return render_template('view_benchmark.html', benchmark=benchmark)
+
+@app.route('/privacy_policy')
+def privacy_policy():
+    return render_template('privacy_policy.html', now=datetime.utcnow())
+
+@app.route('/accept_cookies', methods=['POST'])
+def accept_cookies():
+    response = jsonify({'status': 'success'})
+    # Set a permanent cookie that expires in 1 year
+    response.set_cookie('cookie_consent', 'accepted', max_age=31536000, httponly=False, samesite='Lax')
+    return response
+
+@app.route('/decline_cookies', methods=['POST'])
+def decline_cookies():
+    response = jsonify({'status': 'success'})
+    # Set a permanent cookie that expires in 1 year to remember the decline
+    response.set_cookie('cookie_consent', 'declined', max_age=31536000, httponly=False, samesite='Lax')
+    return response
+
+@app.route('/reset_cookie_consent')
+def reset_cookie_consent():
+    response = redirect(url_for('home'))
+    response.delete_cookie('cookie_consent')
+    return response
+
+@app.route('/kill')
+def kill_app():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+    return 'Server shutting down...'
 
 if __name__ == '__main__':
     with app.app_context():
