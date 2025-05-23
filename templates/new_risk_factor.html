@@ -9,6 +9,16 @@
         <a href="{{ url_for('get_risk_factors') }}" class="btn btn-secondary">Back to Risk Factors</a>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">
+                    {{ message | safe }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     {% if error %}
     <div class="alert alert-danger" role="alert">
         {{ error | safe }}
@@ -20,10 +30,24 @@
             <div class="card">
                 <div class="card-body">
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="row">
                             <div class="col-12 mb-3">
                                 <label class="form-label">Name</label>
                                 <input type="text" class="form-control" name="name" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Asset Class</label>
+                                <select class="form-select" name="asset_class">
+                                    <option value="Other">Other</option>
+                                    <option value="Stocks">Stocks</option>
+                                    <option value="Bonds">Bonds</option>
+                                    <option value="Crypto">Crypto</option>
+                                    <option value="Real Assets">Real Assets</option>
+                                </select>
                             </div>
                         </div>
 

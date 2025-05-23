@@ -239,6 +239,7 @@ class RiskFactor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False, unique=True)
     description = db.Column(db.Text, nullable=True)
+    asset_class = db.Column(db.String(20), nullable=False, default='Other')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     
     # Relationships
@@ -253,6 +254,7 @@ class RiskFactor(db.Model):
             'id': self.id,
             'name': self.name,
             'description': self.description,
+            'asset_class': self.asset_class,
             'created_at': self.created_at.isoformat()
         }
 
@@ -641,42 +643,68 @@ def delete_fund(id):
 @login_required
 def get_risk_factors():
     if not current_user.is_admin():
+        flash('You do not have permission to access this page.', 'error')
         return redirect(url_for('home'))
-    risk_factors = RiskFactor.query.all()
+    risk_factors = RiskFactor.query.order_by(RiskFactor.asset_class, RiskFactor.name).all()
     return render_template('risk_factors.html', risk_factors=risk_factors)
 
 @app.route('/new_risk_factor', methods=['GET', 'POST'])
 @login_required
 def new_risk_factor():
     if not current_user.is_admin():
+        flash('You do not have permission to access this page.', 'error')
         return redirect(url_for('home'))
     
     if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        asset_class = request.form.get('asset_class', 'Other')
         
+        # Validate name
         if not name:
             return render_template('new_risk_factor.html', error='Name is required')
         
+        if len(name) > 120:
+            return render_template('new_risk_factor.html', error='Name must be 120 characters or less')
+        
+        # Check for duplicate name
         if RiskFactor.query.filter_by(name=name).first() is not None:
             return render_template('new_risk_factor.html', error='A risk factor with that name already exists')
         
-        risk_factor = RiskFactor(name=name, description=description)
-        db.session.add(risk_factor)
-        db.session.commit()
-        
-        return redirect(url_for('get_risk_factors'))
+        try:
+            risk_factor = RiskFactor(
+                name=name,
+                description=description if description else None,  # Store None if empty string
+                asset_class=asset_class
+            )
+            db.session.add(risk_factor)
+            db.session.commit()
+            flash('Risk factor created successfully', 'success')
+            return redirect(url_for('get_risk_factors'))
+        except Exception as e:
+            db.session.rollback()
+            return render_template('new_risk_factor.html', error='An error occurred while creating the risk factor')
     
     return render_template('new_risk_factor.html')
 
 @app.route('/risk_factor/<int:id>')
+@login_required
 def view_risk_factor(id):
+    if not current_user.is_admin():
+        flash('You do not have permission to access this page.', 'error')
+        return redirect(url_for('home'))
+        
     risk_factor = RiskFactor.query.get_or_404(id)
     data = RiskFactorData.query.filter_by(risk_factor_id=id).order_by(RiskFactorData.date.desc()).all()
     return render_template('view_risk_factor.html', risk_factor=risk_factor, data=data)
 
 @app.route('/risk_factor/<int:id>/upload_data', methods=['GET', 'POST'])
+@login_required
 def upload_risk_factor_data(id):
+    if not current_user.is_admin():
+        flash('You do not have permission to access this page.', 'error')
+        return redirect(url_for('home'))
+        
     risk_factor = RiskFactor.query.get_or_404(id)
     
     if request.method == 'POST':
@@ -1123,7 +1151,7 @@ def forgot_password():
             flash('If an account exists with this email, you will receive password reset instructions.', 'info')
         else:
             # Don't reveal whether the email exists or not
-            flash('If an account exists with this email, you will receive password reset instructions.', 'info')
+            flash('If an account exists with this email, you will receive password reset instructions.', 'error')
             
         return redirect(url_for('login'))
         
