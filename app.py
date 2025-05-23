@@ -18,8 +18,8 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'register'
-login_manager.login_message = 'Please register or log in to access this page.'
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
 
 @login_manager.user_loader
@@ -265,7 +265,7 @@ def login_required(f):
 def home():
     if current_user.is_authenticated:
         return redirect(url_for('get_portfolios'))
-    return redirect(url_for('login'))
+    return redirect(url_for('register'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -360,23 +360,6 @@ def edit_profile():
             return render_template('edit_profile.html', user=current_user, error=str(e))
     
     return render_template('edit_profile.html', user=current_user)
-
-@app.route('/delete_account', methods=['POST'])
-@login_required
-def delete_account():
-    password = request.form.get('password')
-    
-    if not current_user.check_password(password):
-        return render_template('edit_profile.html', user=current_user, error='Incorrect password')
-    
-    try:
-        db.session.delete(current_user)
-        db.session.commit()
-        logout_user()
-        return redirect(url_for('home'))
-    except Exception as e:
-        db.session.rollback()
-        return render_template('edit_profile.html', user=current_user, error=str(e))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

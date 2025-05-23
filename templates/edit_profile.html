@@ -5,97 +5,88 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <!-- Name Change Form -->
+        <!-- Name Form -->
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-header">
-                    <h4 class="mb-0">Change Name</h4>
+                    <h5 class="mb-0">Update Name</h5>
                 </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('edit_profile') }}">
+                <div class="card-body d-flex flex-column">
+                    <form method="POST" class="d-flex flex-column h-100">
                         <input type="hidden" name="form_type" value="name">
                         <div class="mb-3">
-                            <label for="name" class="form-label">Your Name</label>
+                            <label for="name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
                         </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Update Name</button>
+                        <div class="mt-auto">
+                            <button type="submit" class="btn btn-primary w-100">Update Name</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Email and Password Forms -->
-        <div class="col-md-8">
-            <div class="row">
-                <!-- Email Change Form -->
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h4 class="mb-0">Change Email</h4>
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="{{ url_for('edit_profile') }}">
-                                <input type="hidden" name="form_type" value="email">
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">New Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="current_password" class="form-label">Current Password</label>
-                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
-                                </div>
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary">Update Email</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+        <!-- Email Form -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Update Email</h5>
                 </div>
+                <div class="card-body d-flex flex-column">
+                    <form method="POST" class="d-flex flex-column h-100">
+                        <input type="hidden" name="form_type" value="email">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">New Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="current_password_email" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password_email" name="current_password" required>
+                        </div>
+                        <div class="mt-auto">
+                            <button type="submit" class="btn btn-primary w-100">Update Email</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-                <!-- Password Change Form -->
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h4 class="mb-0">Change Password</h4>
+        <!-- Password Form -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Update Password</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <form method="POST" class="d-flex flex-column h-100">
+                        <input type="hidden" name="form_type" value="password">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
                         </div>
-                        <div class="card-body">
-                            <form method="POST" action="{{ url_for('edit_profile') }}">
-                                <input type="hidden" name="form_type" value="password">
-                                <div class="mb-3">
-                                    <label for="current_password_pw" class="form-label">Current Password</label>
-                                    <input type="password" class="form-control" id="current_password_pw" name="current_password" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="new_password" class="form-label">New Password</label>
-                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
-                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                                </div>
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary">Update Password</button>
-                                </div>
-                            </form>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <div class="mt-auto">
+                            <button type="submit" class="btn btn-primary w-100">Update Password</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-{% if error %}
-<div class="alert alert-danger mt-3">
-    {{ error }}
-</div>
-{% endif %}
+    {% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+    {% endif %}
 
-{% if success %}
-<div class="alert alert-success mt-3">
-    {{ success }}
+    {% if success %}
+    <div class="alert alert-success mt-3">{{ success }}</div>
+    {% endif %}
 </div>
-{% endif %}
 {% endblock %} 
