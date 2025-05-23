@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Benchmarks{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Benchmarks</h2>
+        <a href="{{ url_for('new_benchmark') }}" class="btn btn-primary">Add New Benchmark</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error | safe }}
+    </div>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 40%">Name</th>
+                    <th style="width: 40%">Asset Class</th>
+                    <th style="width: 20%; text-align: right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for benchmark in benchmarks %}
+                <tr>
+                    <td>{{ benchmark.benchmark_name }}</td>
+                    <td>{{ benchmark.asset_class or '-' }}</td>
+                    <td class="text-end">
+                        <div class="btn-group">
+                            <a href="{{ url_for('view_benchmark', id=benchmark.id) }}" 
+                               class="btn btn-primary btn-sm">
+                                View
+                            </a>
+                            {% if current_user.is_admin() or benchmark.user_id == current_user.id %}
+                            <a href="{{ url_for('edit_benchmark', id=benchmark.id) }}" 
+                               class="btn btn-primary btn-sm">
+                                Edit
+                            </a>
+                            <a href="{{ url_for('delete_benchmark', id=benchmark.id) }}" 
+                               class="btn btn-primary btn-sm"
+                               onclick="return confirm('Are you sure you want to delete this benchmark?')">
+                                Delete
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--light-bg);
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+}
+
+.btn-group {
+    gap: 0;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+    border-right: none;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - Risk Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+    :root {
+        --primary-color: #1a73e8;
+        --secondary-color: #4285f4;
+        --accent-color: #669df6;
+        --text-color: #202124;
+        --light-bg: #f8f9fa;
+        --border-color: #e8eaed;
+        --white: #ffffff;
+        --icon-color: #1a73e8;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-color);
+        background-color: var(--light-bg);
+    }
+
+    .navbar {
+        background: var(--white);
+        padding: 0.5rem 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        min-height: 48px;
+    }
+
+    .navbar-brand {
+        font-weight: 600;
+        color: var(--primary-color) !important;
+        font-size: 1.1rem;
+        padding: 0.35rem 0;
+        line-height: 1;
+    }
+
+    .nav-link {
+        color: var(--text-color) !important;
+        font-size: 0.95rem;
+        padding: 0.5rem 0.75rem !important;
+        transition: color 0.2s ease;
+        line-height: 1;
+    }
+
+    .nav-link:hover {
+        color: var(--primary-color) !important;
+    }
+
+    .nav-link i {
+        transition: transform 0.2s ease;
+        color: var(--primary-color);
+    }
+
+    .nav-link:hover i {
+        transform: scale(1.1);
+    }
+
+    .dropdown-menu {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-top: 0;
+        padding: 0.5rem 0;
+    }
+
+    .dropdown-item {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .dropdown-item i {
+        margin-right: 0.5rem;
+        width: 1.2em;
+        text-align: center;
+        color: var(--primary-color);
+    }
+
+    .dropdown-item:hover {
+        background-color: var(--light-bg);
+        color: var(--primary-color);
+    }
+
+    .dropdown-item:hover i {
+        transform: scale(1.1);
+    }
+
+    .profile-link {
+        color: var(--primary-color) !important;
+        font-weight: 500;
+    }
+
+    .profile-link:hover {
+        color: var(--secondary-color) !important;
+    }
+
+    .profile-link i {
+        color: var(--primary-color);
+    }
+
+    .profile-link:hover i {
+        color: var(--secondary-color);
+    }
+
+    .btn-primary {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+    }
+
+    .form-control:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+
+    .card-header {
+        background-color: var(--light-bg);
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 600;
+    }
+
+    .table th {
+        background-color: var(--light-bg);
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+    }
+
+    .btn-group .btn {
+        border-radius: 0;
+    }
+
+    .btn-group .btn:first-child {
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+
+    .btn-group .btn:last-child {
+        border-top-right-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+    }
+
+    /* Desktop hover dropdowns */
+    @media (min-width: 992px) {
+        .dropdown:hover .dropdown-menu {
+            display: block;
+            margin-top: 0;
+        }
+        
+        .navbar-nav .dropdown-menu {
+            position: absolute;
+        }
+    }
+
+    /* Mobile click dropdowns */
+    @media (max-width: 991.98px) {
+        .dropdown-menu {
+            border: none;
+            box-shadow: none;
+            padding-left: 1rem;
+        }
+    }
+
+    .navbar-toggler {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.95rem;
+        line-height: 1;
+    }
+
+    .navbar-toggler-icon {
+        width: 1.2em;
+        height: 1.2em;
+    }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('home') }}">
+                <i class="fas fa-chart-line me-2"></i>Wake Up
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="portfoliosDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-briefcase me-1"></i>Portfolios
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('get_portfolios') }}">
+                                    <i class="fas fa-list"></i>All Portfolios
+                                </a>
+                            </li>
+                            {% for portfolio in current_user.portfolios %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('view_portfolio', id=portfolio.id) }}">
+                                    <i class="fas fa-chart-pie"></i>{{ portfolio.portfolio_name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('new_portfolio') }}">
+                                    <i class="fas fa-plus"></i>New Portfolio
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="viewDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-table me-1"></i>View
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('get_funds') }}">
+                                    <i class="fas fa-money-bill-wave"></i>Funds
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('get_benchmarks') }}">
+                                    <i class="fas fa-chart-bar"></i>Benchmarks
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('get_risk_factors') }}">
+                                    <i class="fas fa-exclamation-triangle"></i>Risk Factors
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-tools me-1"></i>Tools
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('new_fund') }}">
+                                    <i class="fas fa-plus"></i>Add Fund
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('new_benchmark') }}">
+                                    <i class="fas fa-plus"></i>Add Benchmark
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('new_risk_factor') }}">
+                                    <i class="fas fa-plus"></i>Add Risk Factor
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link profile-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>Profile
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('user_page') }}">
+                                    <i class="fas fa-id-card"></i>View Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('edit_profile') }}">
+                                    <i class="fas fa-user-edit"></i>Edit Profile
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('register') }}">
+                            <i class="fas fa-user-plus me-1"></i>Register
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

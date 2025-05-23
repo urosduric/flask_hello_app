@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Benchmark{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Add New Benchmark</h2>
+        <a href="{{ url_for('get_benchmarks') }}" class="btn btn-secondary">Back to Benchmarks</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error | safe }}
+    </div>
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control" name="benchmark_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Asset Class</label>
+                                <input type="text" class="form-control" name="asset_class">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Region</label>
+                                <input type="text" class="form-control" name="region">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Development</label>
+                                <input type="text" class="form-control" name="developed">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Risk Factor</label>
+                                <select class="form-select" name="risk_factor_id">
+                                    <option value="">Select Risk Factor</option>
+                                    {% for risk_factor in risk_factors %}
+                                    <option value="{{ risk_factor.id }}">{{ risk_factor.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Beta</label>
+                                <input type="number" step="0.01" class="form-control" name="beta">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Modified Duration</label>
+                                <input type="number" step="0.01" class="form-control" name="mod_duration">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">FX</label>
+                                <input type="number" step="0.01" class="form-control" name="fx">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">USD</label>
+                                <input type="number" step="0.01" class="form-control" name="usd">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">US</label>
+                                <input type="number" step="0.01" class="form-control" name="us">
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Create Benchmark</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+</style>
+{% endblock %} 

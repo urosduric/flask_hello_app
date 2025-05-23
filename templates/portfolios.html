@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}My Portfolios{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-folder me-2"></i>My Portfolios</h2>
+        <a href="{{ url_for('new_portfolio') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>New Portfolio
+        </a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error | safe }}
+    </div>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Portfolio Name</th>
+                    <th>Default</th>
+                    <th>Paid In</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for portfolio in portfolios %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('view_portfolio', id=portfolio.id) }}" class="text-decoration-none">
+                            {{ portfolio.portfolio_name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if portfolio.is_default %}
+                        <span class="badge bg-success">Default</span>
+                        {% endif %}
+                    </td>
+                    <td>${{ "%.2f"|format(portfolio.paid_in) }}</td>
+                    <td>{{ portfolio.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <a href="{{ url_for('view_portfolio', id=portfolio.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

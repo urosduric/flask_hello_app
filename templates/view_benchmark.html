@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}View Benchmark{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-bar me-2"></i>{{ benchmark.benchmark_name }}</h2>
+        <div>
+            {% if current_user.is_admin() or benchmark.user_id == current_user.id %}
+            <a href="{{ url_for('edit_benchmark', id=benchmark.id) }}" class="btn btn-primary me-2">Edit</a>
+            {% endif %}
+            <a href="{{ url_for('get_benchmarks') }}" class="btn btn-secondary">Back to Benchmarks</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">Asset Class:</div>
+                        <div class="col-8">{{ benchmark.asset_class or '-' }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">Region:</div>
+                        <div class="col-8">{{ benchmark.region or '-' }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">Development:</div>
+                        <div class="col-8">{{ benchmark.developed or '-' }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4 fw-bold">Risk Factor:</div>
+                        <div class="col-8">{{ benchmark.risk_factor.name if benchmark.risk_factor else '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Risk Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">Beta:</div>
+                        <div class="col-8">{{ "%.2f"|format(benchmark.beta) if benchmark.beta else '-' }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">Modified Duration:</div>
+                        <div class="col-8">{{ "%.2f"|format(benchmark.mod_duration) if benchmark.mod_duration else '-' }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">FX:</div>
+                        <div class="col-8">{{ "%.2f"|format(benchmark.fx) if benchmark.fx else '-' }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">USD:</div>
+                        <div class="col-8">{{ "%.2f"|format(benchmark.usd) if benchmark.usd else '-' }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4 fw-bold">US:</div>
+                        <div class="col-8">{{ "%.2f"|format(benchmark.us) if benchmark.us else '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: var(--light-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.fw-bold {
+    color: var(--text-color);
+}
+</style>
+{% endblock %} 

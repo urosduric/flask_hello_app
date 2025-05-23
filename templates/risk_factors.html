@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Factors{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Risk Factors</h2>
+        {% if current_user.is_admin() %}
+        <a href="{{ url_for('new_risk_factor') }}" class="btn btn-primary">Add New Risk Factor</a>
+        {% endif %}
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error | safe }}
+    </div>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 40%">Name</th>
+                    <th style="width: 40%">Description</th>
+                    <th style="width: 20%; text-align: right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for risk_factor in risk_factors %}
+                <tr>
+                    <td>{{ risk_factor.name }}</td>
+                    <td>{{ risk_factor.description or '-' }}</td>
+                    <td class="text-end">
+                        <div class="btn-group">
+                            <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" 
+                               class="btn btn-primary btn-sm">
+                                View Data
+                            </a>
+                            {% if current_user.is_admin() %}
+                            <a href="{{ url_for('delete_risk_factor', id=risk_factor.id) }}" 
+                               class="btn btn-primary btn-sm"
+                               onclick="return confirm('Are you sure you want to delete this risk factor?')">
+                                Delete
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--light-bg);
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+}
+
+.btn-group {
+    gap: 0;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+    border-right: none;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %} 

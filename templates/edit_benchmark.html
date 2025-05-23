@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Benchmark{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-edit me-2"></i>Edit Benchmark: {{ benchmark.benchmark_name }}</h2>
+        <a href="{{ url_for('get_benchmarks') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Benchmarks
+        </a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error | safe }}
+    </div>
+    {% endif %}
+
+    {% if success %}
+    <div class="alert alert-success" role="alert">
+        {{ success }}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Basic Information</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ benchmark.benchmark_name }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('name', '{{ benchmark.benchmark_name }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Asset Class</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ benchmark.asset_class or '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('asset_class', '{{ benchmark.asset_class or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Region</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ benchmark.region or '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('region', '{{ benchmark.region or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Development Status</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ benchmark.developed or '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('developed', '{{ benchmark.developed or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Risk Metrics</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Risk Factor</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ benchmark.risk_factor.name if benchmark.risk_factor else '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('risk_factor_id', '{{ benchmark.risk_factor_id or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Beta</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ "%.2f"|format(benchmark.beta) if benchmark.beta else '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('beta', '{{ benchmark.beta or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Modified Duration</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ "%.2f"|format(benchmark.mod_duration) if benchmark.mod_duration else '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('mod_duration', '{{ benchmark.mod_duration or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">FX</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ "%.2f"|format(benchmark.fx) if benchmark.fx else '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('fx', '{{ benchmark.fx or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">USD</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ "%.2f"|format(benchmark.usd) if benchmark.usd else '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('usd', '{{ benchmark.usd or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">US</label>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ "%.2f"|format(benchmark.us) if benchmark.us else '-' }}</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showEditModal('us', '{{ benchmark.us or '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label id="fieldLabel" class="form-label"></label>
+                        <input type="text" class="form-control" id="fieldValue" name="value">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showEditModal(field, currentValue) {
+    const modal = new bootstrap.Modal(document.getElementById('editModal'));
+    const form = document.getElementById('editForm');
+    const label = document.getElementById('fieldLabel');
+    const input = document.getElementById('fieldValue');
+
+    // Set up the form
+    label.textContent = field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ');
+    input.value = currentValue;
+    form.action = "{{ url_for('edit_benchmark', id=benchmark.id) }}?field=" + field;
+
+    modal.show();
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.card-title {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+</style>
+{% endblock %} 

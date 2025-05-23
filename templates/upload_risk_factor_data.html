@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Data - {{ risk_factor.name }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Upload Performance Data</h2>
+    <h4 class="text-muted">{{ risk_factor.name }}</h4>
+    
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    
+    <div class="alert alert-info">
+        <h5>Upload Instructions:</h5>
+        <ul>
+            <li>File must be in CSV format</li>
+            <li>Required columns: 'date' and 'daily_return'</li>
+            <li>Date format: YYYY-MM-DD</li>
+            <li>Returns should be in percentage (e.g., 0.5 for 0.5%)</li>
+            <li>Existing data will be replaced</li>
+        </ul>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="file" class="form-label">CSV File</label>
+            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Upload Data</button>
+        <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %} 

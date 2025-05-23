@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card profile-card">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-circle fa-5x" style="color: var(--icon-color);"></i>
+                        </div>
+                        <h2 class="mt-3 mb-1">{{ user.username }}</h2>
+                        <p class="text-muted">Member since {{ user.created_at.strftime('%B %Y') }}</p>
+                    </div>
+
+                    <div class="profile-info">
+                        <div class="info-section">
+                            <h4><i class="fas fa-envelope me-2" style="color: var(--icon-color);"></i>Contact Information</h4>
+                            <div class="info-item">
+                                <span class="label">Email:</span>
+                                <span class="value">{{ user.email }}</span>
+                            </div>
+                        </div>
+
+                        {% if user.birthday %}
+                        <div class="info-section">
+                            <h4><i class="fas fa-birthday-cake me-2" style="color: var(--icon-color);"></i>Personal Information</h4>
+                            <div class="info-item">
+                                <span class="label">Birthday:</span>
+                                <span class="value">{{ user.birthday.strftime('%B %d, %Y') }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="info-section">
+                            <h4><i class="fas fa-chart-pie me-2" style="color: var(--icon-color);"></i>Portfolio Summary</h4>
+                            <div class="info-item">
+                                <span class="label">Total Portfolios:</span>
+                                <span class="value">{{ user.portfolios|length }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">
+                            <i class="fas fa-user-edit me-2"></i>Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .profile-info {
+        padding: 1rem 0;
+    }
+
+    .info-section {
+        margin-bottom: 2rem;
+    }
+
+    .info-section h4 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+        border-bottom: 2px solid var(--light-bg);
+        padding-bottom: 0.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        background-color: var(--light-bg);
+        border-radius: 8px;
+    }
+
+    .info-item .label {
+        font-weight: 500;
+        width: 150px;
+        color: var(--text-color);
+    }
+
+    .info-item .value {
+        color: var(--primary-color);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %} 
