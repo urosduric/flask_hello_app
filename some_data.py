@@ -26,5 +26,18 @@ MARKET_TYPES = [
     'Emerging Markets'
 ]
 
+# Bond Types
+BOND_TYPES = [
+    'Government',
+    'Corporate',
+    'Aggregate',
+    'Inflation linked',
+    'Other'
+]
 
+# Bond rating
+BOND_RATING = [
+    'Investment grade',
+    'High yield'
+]
 

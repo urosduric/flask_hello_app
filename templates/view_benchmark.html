@@ -1,71 +1,148 @@
 {% extends "base.html" %}
 
-{% block title %}View Benchmark{% endblock %}
+{% block title %}{{ benchmark.benchmark_name }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-chart-bar me-2"></i>{{ benchmark.benchmark_name }}</h2>
+<div class="container-fluid px-4 py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="mb-2">{{ benchmark.benchmark_name }}</h2>
+            <div class="d-flex flex-column gap-1">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-{{ 'globe' if benchmark.generic_benchmark else 'user' }} me-2" 
+                       style="color: {{ '#0d6efd' if benchmark.generic_benchmark else '#6c757d' }}"></i>
+                    <span class="text-muted">
+                        {{ 'Generic benchmark' if benchmark.generic_benchmark else 'User specific benchmark' }}
+                    </span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                    <span class="text-muted">Created: {{ benchmark.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </div>
+        </div>
         <div>
-            {% if current_user.is_admin() or benchmark.user_id == current_user.id %}
-            <a href="{{ url_for('edit_benchmark', id=benchmark.id) }}" class="btn btn-primary me-2">Edit</a>
-            {% endif %}
-            <a href="{{ url_for('get_benchmarks') }}" class="btn btn-secondary">Back to Benchmarks</a>
+            <a href="{{ url_for('get_benchmarks') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
         </div>
     </div>
 
+    <!-- Main Content -->
     <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Basic Information</h5>
+        <!-- Left Column - Basic Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Basic Information
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-4 fw-bold">Asset Class:</div>
-                        <div class="col-8">{{ benchmark.asset_class or '-' }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-4 fw-bold">Region:</div>
-                        <div class="col-8">{{ benchmark.region or '-' }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-4 fw-bold">Development:</div>
-                        <div class="col-8">{{ benchmark.developed or '-' }}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-4 fw-bold">Risk Factor:</div>
-                        <div class="col-8">{{ benchmark.risk_factor.name if benchmark.risk_factor else '-' }}</div>
+                    <div class="info-grid">
+                        <!-- First Row -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">Asset Class</span>
+                                    <span class="info-value">{{ benchmark.asset_class or 'N/A' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">Region</span>
+                                    <span class="info-value">{{ benchmark.region or 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Second Row -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">Market Type</span>
+                                    <span class="info-value">{{ benchmark.developed or 'N/A' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">Bond Type</span>
+                                    <span class="info-value">{{ benchmark.bond_type or 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Third Row -->
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">Bond Rating</span>
+                                    <span class="info-value">{{ benchmark.bond_rating or 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Risk Metrics</h5>
+        <!-- Right Column - Risk Metrics -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Risk Metrics
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-4 fw-bold">Beta:</div>
-                        <div class="col-8">{{ "%.2f"|format(benchmark.beta) if benchmark.beta else '-' }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-4 fw-bold">Modified Duration:</div>
-                        <div class="col-8">{{ "%.2f"|format(benchmark.mod_duration) if benchmark.mod_duration else '-' }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-4 fw-bold">FX:</div>
-                        <div class="col-8">{{ "%.2f"|format(benchmark.fx) if benchmark.fx else '-' }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-4 fw-bold">USD:</div>
-                        <div class="col-8">{{ "%.2f"|format(benchmark.usd) if benchmark.usd else '-' }}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-4 fw-bold">US:</div>
-                        <div class="col-8">{{ "%.2f"|format(benchmark.us) if benchmark.us else '-' }}</div>
+                    <div class="info-grid">
+                        <!-- First Row -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="info-item">
+                                    <span class="info-label">Risk Factor</span>
+                                    <span class="info-value">{{ benchmark.risk_factor.name if benchmark.risk_factor else 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Second Row -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">Beta</span>
+                                    <span class="info-value">{{ "%.2f"|format(benchmark.beta) if benchmark.beta is not none else 'N/A' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">Modified Duration</span>
+                                    <span class="info-value">{{ "%.2f"|format(benchmark.mod_duration) if benchmark.mod_duration is not none else 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Third Row -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">FX</span>
+                                    <span class="info-value">{{ "%.0f"|format(benchmark.fx * 100) if benchmark.fx is not none else 'N/A' }}%</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">USD</span>
+                                    <span class="info-value">{{ "%.0f"|format(benchmark.usd * 100) if benchmark.usd is not none else 'N/A' }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Fourth Row -->
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="info-item">
+                                    <span class="info-label">US</span>
+                                    <span class="info-value">{{ "%.0f"|format(benchmark.us * 100) if benchmark.us is not none else 'N/A' }}%</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -80,8 +157,8 @@
 }
 
 .card-header {
-    background-color: var(--light-bg);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: #f8f9fa;
 }
 
 .card-title {
@@ -89,8 +166,45 @@
     font-weight: 600;
 }
 
-.fw-bold {
+.info-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.info-value {
     color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .info-value {
+        font-size: 1rem;
+    }
 }
 </style>
 {% endblock %} 

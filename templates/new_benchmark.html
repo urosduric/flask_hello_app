@@ -97,6 +97,27 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bond Rating</label>
+                                <select class="form-select" id="bond_rating" name="bond_rating">
+                                    <option value="">N/A</option>
+                                    {% for rating in form_options.bond_ratings %}
+                                    <option value="{{ rating }}">{{ rating }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bond Type</label>
+                                <select class="form-select" id="bond_type" name="bond_type">
+                                    <option value="">N/A</option>
+                                    {% for bond_type in form_options.bond_types %}
+                                    <option value="{{ bond_type }}">{{ bond_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="text-end">
                             <button type="submit" class="btn btn-primary">Create Benchmark</button>
                         </div>
