@@ -860,16 +860,34 @@ def upload_risk_factor_data(id):
     
     return render_template('upload_risk_factor_data.html', risk_factor=risk_factor)
 
-@app.route('/delete_risk_factor/<int:id>')
+@app.route('/delete_risk_factor/<int:id>', methods=['POST'])
 @login_required
 def delete_risk_factor(id):
     if not current_user.is_admin():
-        return redirect(url_for('home'))
+        flash('You do not have permission to delete risk factors', 'error')
+        return redirect(url_for('get_risk_factors'))
     
     risk_factor = RiskFactor.query.get_or_404(id)
-    db.session.delete(risk_factor)
-    db.session.commit()
-    return redirect(url_for('get_risk_factors'))
+    
+    # Check if risk factor has any related benchmarks
+    related_benchmarks = Benchmark.query.filter_by(risk_factor_id=id).all()
+    if related_benchmarks:
+        benchmark_list = [f"• {benchmark.benchmark_name}" for benchmark in related_benchmarks]
+        error_message = "This risk factor is currently assigned to the following benchmarks:\n"
+        error_message += "\n".join(benchmark_list)
+        error_message += "\n\nPlease delete these benchmarks first before deleting this risk factor."
+        flash(error_message, 'error')
+        return redirect(url_for('get_risk_factors'))
+    
+    try:
+        db.session.delete(risk_factor)
+        db.session.commit()
+        flash('Risk factor was successfully deleted', 'success')
+        return redirect(url_for('get_risk_factors'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred while deleting the risk factor: {str(e)}', 'error')
+        return redirect(url_for('get_risk_factors'))
 
 # Portfolio routes
 @app.route('/portfolios')
@@ -1255,6 +1273,11 @@ def forgot_password():
         return redirect(url_for('login'))
         
     return render_template('forgot_password.html')
+
+# Add context processor for current year
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow()}
 
 if __name__ == '__main__':
     with app.app_context():

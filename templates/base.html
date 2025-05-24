@@ -23,6 +23,14 @@
         font-family: 'Inter', sans-serif;
         color: var(--text-color);
         background-color: var(--light-bg);
+        min-height: 15cm;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main-content {
+        flex: 1 0 auto;
+        min-height: 15cm;
     }
 
     .navbar {
@@ -271,6 +279,11 @@
             justify-content: center;
         }
     }
+
+    .footer {
+        background-color: var(--light-bg);
+        border-top: 1px solid var(--border-color);
+    }
     </style>
 </head>
 <body>
@@ -390,27 +403,29 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    {% set alert_class = 'alert-info' %}
-                    {% if category == 'success' %}
-                        {% set alert_class = 'alert-success' %}
-                    {% elif category == 'error' %}
-                        {% set alert_class = 'alert-danger' %}
-                    {% elif category == 'warning' %}
-                        {% set alert_class = 'alert-warning' %}
-                    {% endif %}
-                    <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <div class="main-content">
+        <div class="container mt-4 pb-5">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {% set alert_class = 'alert-info' %}
+                        {% if category == 'success' %}
+                            {% set alert_class = 'alert-success' %}
+                        {% elif category == 'error' %}
+                            {% set alert_class = 'alert-danger' %}
+                        {% elif category == 'warning' %}
+                            {% set alert_class = 'alert-warning' %}
+                        {% endif %}
+                        <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-        {% block content %}{% endblock %}
+            {% block content %}{% endblock %}
+        </div>
     </div>
 
     <!-- Cookie Consent Banner -->
@@ -423,6 +438,51 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-4 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h5 class="text-primary mb-3">Risk Management</h5>
+                    <p class="text-muted mb-0">A comprehensive platform for managing investment portfolios and risk factors.</p>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h5 class="text-primary mb-3">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{{ url_for('home') }}" class="text-decoration-none text-muted">Home</a></li>
+                        <li class="mb-2"><a href="{{ url_for('get_portfolios') }}" class="text-decoration-none text-muted">Portfolios</a></li>
+                        <li class="mb-2"><a href="{{ url_for('get_benchmarks') }}" class="text-decoration-none text-muted">Benchmarks</a></li>
+                        <li class="mb-2"><a href="{{ url_for('get_funds') }}" class="text-decoration-none text-muted">Funds</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="text-primary mb-3">Connect With Us</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-muted text-decoration-none" title="LinkedIn">
+                            <i class="fab fa-linkedin fa-lg"></i>
+                        </a>
+                        <a href="#" class="text-muted text-decoration-none" title="Twitter">
+                            <i class="fab fa-twitter fa-lg"></i>
+                        </a>
+                        <a href="#" class="text-muted text-decoration-none" title="GitHub">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-muted mb-0">&copy; {{ now.year }} Risk Management. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a href="{{ url_for('privacy_policy') }}" class="text-muted text-decoration-none me-3">Privacy Policy</a>
+                    <a href="#" class="text-muted text-decoration-none">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
