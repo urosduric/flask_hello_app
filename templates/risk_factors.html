@@ -19,18 +19,17 @@
     </div>
     {% endif %}
 
-    <div class="card" style="padding: 30px 20px 10px 20px;">
+    <div class="card" style="padding: 30px 20px 20px 20px;">
         <div class="card-body p-0">
             <div class="row g-0">
                 <!-- Sidebar -->
                 <div class="col-md-3 border-end">
                     <div class="p-3">
-                        <h5 class="mb-3">Asset Classes</h5>
                         <div class="list-group">
                             <button type="button" class="list-group-item list-group-item-action active" data-asset-class="all">
                                 All Asset Classes
                             </button>
-                            {% for asset_class in risk_factors|map(attribute='asset_class')|unique|sort %}
+                            {% for asset_class in asset_classes %}
                             <button type="button" class="list-group-item list-group-item-action" data-asset-class="{{ asset_class }}">
                                 {{ asset_class }}
                             </button>

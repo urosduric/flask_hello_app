@@ -48,7 +48,7 @@ login_manager.login_message_category = 'info'
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["200 per day", "100 per hour"]
 )
 
 @login_manager.user_loader
@@ -502,14 +502,11 @@ def register():
 @app.route('/get_benchmarks')
 @login_required
 def get_benchmarks():
-    if current_user.is_admin():
-        benchmarks = Benchmark.query.all()
-    else:
-        benchmarks = Benchmark.query.filter(
-            (Benchmark.user_id == current_user.id) | 
-            (Benchmark.generic_benchmark == 1)
-        ).all()
-    return render_template('benchmarks.html', benchmarks=benchmarks)
+    benchmarks = Benchmark.query.filter(
+        (Benchmark.generic_benchmark == 1) |  # Show all generic benchmarks
+        (Benchmark.user_id == current_user.id)  # Show user's own benchmarks
+    ).order_by(Benchmark.asset_class, Benchmark.benchmark_name).all()
+    return render_template('benchmarks.html', benchmarks=benchmarks, asset_classes=ASSET_CLASSES)
 
 @app.route('/new_benchmark', methods=['GET', 'POST'])
 @login_required
@@ -645,31 +642,40 @@ def new_benchmark():
                          risk_factors=risk_factors,
                          form_options=form_options)
 
-@app.route('/delete_benchmark/<int:id>', methods=['GET'])
+@app.route('/delete_benchmark/<int:id>', methods=['POST'])
+@login_required
 def delete_benchmark(id):
     benchmark = Benchmark.query.get_or_404(id)
+    
+    # Check if user has permission to delete
+    if not current_user.is_admin() and benchmark.user_id != current_user.id:
+        flash('You do not have permission to delete this benchmark', 'error')
+        return redirect(url_for('get_benchmarks'))
     
     # Check if benchmark has any related funds
     related_funds = Fund.query.filter_by(benchmark_id=id).all()
     if related_funds:
-        # Create a list of fund details
-        fund_list = [f"- {fund.fund_name} (ID: {fund.id})" for fund in related_funds]
-        error_message = f"This benchmark is currently assigned to the following funds:<br><br>"
-        error_message += "<br>".join(fund_list)
-        error_message += "<br><br>Please delete these funds first before deleting this benchmark."
-        return render_template('benchmarks.html', 
-                             benchmarks=Benchmark.query.all(),
-                             error=error_message)
+        fund_list = [f"• {fund.fund_name}" for fund in related_funds]
+        error_message = "This benchmark is currently assigned to the following funds:\n"
+        error_message += "\n".join(fund_list)
+        error_message += "\n\nPlease delete these funds first before deleting this benchmark."
+        flash(error_message, 'error')
+        return redirect(url_for('get_benchmarks'))
     
     try:
+        # Additional check to ensure we're not deleting a generic benchmark unless admin
+        if benchmark.generic_benchmark and not current_user.is_admin():
+            flash('You do not have permission to delete generic benchmarks', 'error')
+            return redirect(url_for('get_benchmarks'))
+            
         db.session.delete(benchmark)
         db.session.commit()
+        flash('Benchmark was successfully deleted', 'success')
         return redirect(url_for('get_benchmarks'))
     except Exception as e:
         db.session.rollback()
-        return render_template('benchmarks.html',
-                             benchmarks=Benchmark.query.all(),
-                             error=f"An error occurred while deleting the benchmark: {str(e)}")
+        flash(f'An error occurred while deleting the benchmark: {str(e)}', 'error')
+        return redirect(url_for('get_benchmarks'))
 
 # Fund routes
 @app.route('/get_funds')
@@ -739,7 +745,7 @@ def get_risk_factors():
         flash('You do not have permission to access this page.', 'error')
         return redirect(url_for('home'))
     risk_factors = RiskFactor.query.order_by(RiskFactor.asset_class, RiskFactor.name).all()
-    return render_template('risk_factors.html', risk_factors=risk_factors)
+    return render_template('risk_factors.html', risk_factors=risk_factors, asset_classes=ASSET_CLASSES)
 
 @app.route('/new_risk_factor', methods=['GET', 'POST'])
 @login_required
