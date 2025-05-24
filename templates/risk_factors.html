@@ -58,16 +58,16 @@
                                 <table class="table table-hover mb-0" id="riskFactorsTable">
                                     <thead>
                                         <tr>
-                                            <th style="width: 50%">Name</th>
-                                            <th style="width: 30%">Asset Class</th>
-                                            <th style="width: 20%; text-align: right">Actions</th>
+                                            <th style="width: 70%">Name</th>
+                                            <th style="width: 15%">Asset Class</th>
+                                            <th style="width: 15%; text-align: right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for risk_factor in risk_factors %}
                                         <tr data-asset-class="{{ risk_factor.asset_class }}">
-                                            <td>{{ risk_factor.name }}</td>
-                                            <td>{{ risk_factor.asset_class }}</td>
+                                            <td class="text-truncate" style="max-width: 0;" title="{{ risk_factor.name }}">{{ risk_factor.name }}</td>
+                                            <td class="text-truncate" style="max-width: 0;">{{ risk_factor.asset_class }}</td>
                                             <td class="text-end">
                                                 <div class="btn-group">
                                                     <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" 
@@ -136,8 +136,8 @@
 .btn-group .btn {
     border-radius: 0;
     border-right: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.25rem 0.5rem;
-    width: 38px;
+    padding: 0.2rem 0.4rem;
+    width: 32px;
     height: 24px;
     display: flex;
     align-items: center;
@@ -145,7 +145,7 @@
 }
 
 .btn-group .btn i {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
 }
 
 .btn-group .btn:first-child {
