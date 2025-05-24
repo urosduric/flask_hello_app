@@ -9,6 +9,7 @@ ASSET_CLASSES = [
     'Bonds',
     'Real Assets',
     'Crypto',
+    'Multi-Asset',
     'Other'
 ]
 

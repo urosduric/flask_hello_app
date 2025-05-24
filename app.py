@@ -992,40 +992,58 @@ def edit_benchmark(id):
         flash('You do not have permission to edit this benchmark', 'error')
         return redirect(url_for('get_benchmarks'))
     
+    # Load risk factors and form options
+    risk_factors = RiskFactor.query.all()
+    form_options = {
+        'asset_classes': ASSET_CLASSES,
+        'regions': REGIONS,
+        'market_types': MARKET_TYPES,
+        'bond_ratings': BOND_RATING,
+        'bond_types': BOND_TYPES
+    }
+    
     if request.method == 'POST':
-        field = request.args.get('field')
-        value = request.form.get('value')
-        
-        if field == 'name':
-            benchmark.benchmark_name = value
-        elif field == 'asset_class':
-            benchmark.asset_class = value
-        elif field == 'region':
-            benchmark.region = value
-        elif field == 'developed':
-            benchmark.developed = value
-        elif field == 'risk_factor_id':
-            benchmark.risk_factor_id = int(value) if value else None
-        elif field in ['beta', 'mod_duration', 'fx', 'usd', 'us']:
-            try:
-                setattr(benchmark, field, float(value) if value else None)
-            except ValueError:
-                return render_template('edit_benchmark.html', 
-                                    benchmark=benchmark,
-                                    error=f'Invalid value for {field}')
-        
         try:
+            # Update benchmark fields
+            benchmark.benchmark_name = request.form.get('benchmark_name')
+            benchmark.risk_factor_id = request.form.get('risk_factor_id')
+            benchmark.asset_class = request.form.get('asset_class')
+            benchmark.region = request.form.get('region')
+            benchmark.developed = request.form.get('developed')
+            benchmark.bond_rating = request.form.get('bond_rating')
+            benchmark.bond_type = request.form.get('bond_type')
+            
+            # Handle numeric fields with validation
+            for field in ['beta', 'mod_duration', 'fx', 'usd', 'us']:
+                value = request.form.get(field)
+                if value:
+                    try:
+                        setattr(benchmark, field, float(value))
+                    except ValueError:
+                        flash(f'Invalid value for {field}. Please enter a valid number.', 'error')
+                        return render_template('edit_benchmark.html', 
+                                            benchmark=benchmark,
+                                            risk_factors=risk_factors,
+                                            form_options=form_options)
+                else:
+                    setattr(benchmark, field, None)
+            
             db.session.commit()
-            return render_template('edit_benchmark.html', 
-                                benchmark=benchmark,
-                                success=f'{field.replace("_", " ").title()} updated successfully')
+            flash('Benchmark updated successfully!', 'success')
+            return redirect(url_for('view_benchmark', id=benchmark.id))
+            
         except Exception as e:
             db.session.rollback()
+            flash(f'Error updating benchmark: {str(e)}', 'error')
             return render_template('edit_benchmark.html', 
                                 benchmark=benchmark,
-                                error=str(e))
+                                risk_factors=risk_factors,
+                                form_options=form_options)
     
-    return render_template('edit_benchmark.html', benchmark=benchmark)
+    return render_template('edit_benchmark.html', 
+                         benchmark=benchmark,
+                         risk_factors=risk_factors,
+                         form_options=form_options)
 
 @app.route('/edit_fund/<int:id>', methods=['GET', 'POST'])
 @login_required
