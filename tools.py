@@ -13,9 +13,5 @@ python app.py 5005
 
 # send to github
 '''
-git init &&
-git add . &&
-git commit -m "Initial commit: Flask application with risk factors management" &&
-git remote -v && 
-git push -u origin main
+git checkout main && git add templates/*.html *.py && git commit -m "Update project files" && git push origin main
 '''

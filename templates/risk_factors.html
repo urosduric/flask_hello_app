@@ -4,11 +4,11 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Risk Factors</h2>
-        {% if current_user.is_admin() %}
-        <a href="{{ url_for('new_risk_factor') }}" class="btn btn-primary">Add New Risk Factor</a>
-        {% endif %}
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">Risk factors</h2>
+            <h4 class="subtitle">Add performance data needed for simulations</h4>
+        </div>
     </div>
 
 
@@ -103,6 +103,13 @@
                                     <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
                                 </div>
                             </div>
+
+                            <!-- Add New Risk Factor Link -->
+                            <div class="text-end mt-3">
+                                <a href="{{ url_for('new_risk_factor') }}" class="add-risk-factor-link">
+                                    <i class="fas fa-plus me-1"></i>Add new risk factor
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -112,6 +119,30 @@
 </div>
 
 <style>
+
+
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+
+
 .table {
     width: 100%;
     margin-bottom: 0;
@@ -208,13 +239,13 @@
     min-height: auto;
     height: fit-content;
     overflow: visible;
-    min-height: calc(5 * 32px + 32px + 60px); /* 5 rows + header + pagination */
+    min-height: calc(7 * 33px + 40px + 60px); /* 7 rows + header + pagination */
 }
 
 .table-responsive {
     height: fit-content;
     overflow: visible;
-    min-height: calc(5 * 32px + 32px); /* 5 rows + header */
+    min-height: calc(7 * 33px + 40px); /* 7 rows + header */
 }
 
 /* Pagination container */
@@ -222,6 +253,19 @@
     min-height: 60px; /* Fixed height for pagination area */
     display: flex;
     align-items: center;
+}
+
+/* Add New Risk Factor Link styles */
+.add-risk-factor-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.add-risk-factor-link:hover {
+    color: var(--secondary-color);
+    text-decoration: none;
 }
 </style>
 
@@ -238,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalCount = document.getElementById('totalCount');
     
     let currentPage = 1;
-    const rowsPerPage = 5;
+    const rowsPerPage = 7;
     let filteredRows = rows;
 
     function updateTable() {
