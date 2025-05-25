@@ -4,10 +4,18 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Benchmarks</h2>
-        <a href="{{ url_for('new_benchmark') }}" class="btn btn-primary">Add New Benchmark</a>
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">Benchmarks</h2>
+            <h4 class="subtitle">Add more allocation details to your funds</h4>
+        </div>
     </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error | safe }}
+    </div>
+    {% endif %}
 
     <div class="card" style="padding: 30px 20px 20px 20px;">
         <div class="card-body p-0">
@@ -116,10 +124,17 @@
                                 <div class="ps-3 pagination-text">
                                     Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> entries
                                 </div>
-                                <div class="btn-group pe-3">
+                                <div class="btn-group">
                                     <button type="button" class="btn btn-outline-primary" id="prevPage" disabled>Previous</button>
                                     <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
                                 </div>
+                            </div>
+
+                            <!-- Add New Benchmark Link -->
+                            <div class="text-end mt-3">
+                                <a href="{{ url_for('new_benchmark') }}" class="add-benchmark-link">
+                                    <i class="fas fa-plus me-1"></i>Add new benchmark
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -130,6 +145,26 @@
 </div>
 
 <style>
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
 .table {
     width: 100%;
     margin-bottom: 0;
@@ -226,13 +261,13 @@
     min-height: auto;
     height: fit-content;
     overflow: visible;
-    min-height: calc(5 * 32px + 32px + 60px); /* 5 rows + header + pagination */
+    min-height: calc(7 * 35px + 40px + 60px); /* 7 rows + header + pagination */
 }
 
 .table-responsive {
     height: fit-content;
     overflow: visible;
-    min-height: calc(5 * 32px + 32px); /* 5 rows + header */
+    min-height: calc(7 * 35px + 40px); /* 7 rows + header */
 }
 
 /* Pagination container */
@@ -346,6 +381,19 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Add New Benchmark Link styles */
+.add-benchmark-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.add-benchmark-link:hover {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
 </style>
 
 <script>
@@ -360,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalCount = document.getElementById('totalCount');
     
     let currentPage = 1;
-    const rowsPerPage = 5;
+    const rowsPerPage = 7;
     let filteredRows = Array.from(table.querySelectorAll('tbody tr'));
     
     function updateTable() {
