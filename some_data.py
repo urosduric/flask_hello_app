@@ -42,3 +42,9 @@ BOND_RATING = [
     'High yield'
 ]
 
+# Vehicle
+VEHICLE = [
+    'ETF',
+    'Investment Fund',
+    'Other'
+]

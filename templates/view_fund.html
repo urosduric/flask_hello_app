@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}View Fund{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">Fund Details</h2>
+            <h4 class="subtitle">{{ fund.fund_name }}</h4>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title mb-4">Fund Information</h5>
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th style="width: 40%">Fund Name</th>
+                                <td>{{ fund.fund_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Long Name</th>
+                                <td>{{ fund.long_name or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>One Word Name</th>
+                                <td>{{ fund.one_word_name or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Ticker</th>
+                                <td>{{ fund.ticker or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Identifier</th>
+                                <td>{{ fund.identifier or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Vehicle</th>
+                                <td>{{ fund.vehicle or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Type</th>
+                                <td>
+                                    {% if fund.generic_fund %}
+                                    <span class="badge bg-primary">Generic Fund</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">User-Specific Fund</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="card-title mb-4">Benchmark Information</h5>
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th style="width: 40%">Benchmark Name</th>
+                                <td>{{ fund.benchmark.benchmark_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Asset Class</th>
+                                <td>{{ fund.benchmark.asset_class or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Region</th>
+                                <td>{{ fund.benchmark.region or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Market Type</th>
+                                <td>{{ fund.benchmark.developed or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Risk Factor</th>
+                                <td>{{ fund.benchmark.risk_factor.name if fund.benchmark.risk_factor else '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a href="{{ url_for('get_funds') }}" class="btn btn-secondary">Back to Funds</a>
+                {% if current_user.is_admin() or fund.user_id == current_user.id %}
+                <a href="{{ url_for('edit_fund', id=fund.id) }}" class="btn btn-primary">Edit Fund</a>
+                <form action="{{ url_for('delete_fund', id=fund.id) }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this fund?')">Delete Fund</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.table th {
+    background-color: var(--light-bg);
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.875rem;
+    padding: 0.5em 0.75em;
+}
+
+.btn {
+    margin-right: 0.5rem;
+}
+
+.btn:last-child {
+    margin-right: 0;
+}
+</style>
+{% endblock %} 

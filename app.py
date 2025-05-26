@@ -666,119 +666,88 @@ def delete_benchmark(id):
 @app.route('/get_funds')
 @login_required
 def get_funds():
-    if current_user.is_admin():
-        funds = Fund.query.all()
-    else:
-        funds = Fund.query.filter(
-            (Fund.user_id == current_user.id) | 
-            (Fund.generic_fund == 1)
-        ).all()
-    portfolios = Portfolio.query.filter_by(user_id=current_user.id).all()
-    return render_template('funds.html', funds=funds, portfolios=portfolios)
+    funds = Fund.query.filter(
+        (Fund.generic_fund == 1) |  # Show all generic funds
+        (Fund.user_id == current_user.id)  # Show user's own funds
+    ).order_by(Fund.benchmark.has(asset_class=Benchmark.asset_class), Fund.fund_name).all()
+    
+    # Get user's portfolios for the dropdown
+    portfolios = Portfolio.query.filter_by(user_id=current_user.id).order_by(Portfolio.portfolio_name).all()
+    
+    return render_template('funds.html', 
+                         funds=funds,
+                         portfolios=portfolios,
+                         asset_classes=ASSET_CLASSES)
 
 @app.route('/new_fund', methods=['GET', 'POST'])
 @login_required
 def new_fund():
-    # Load benchmarks and vehicles
+    # Load benchmarks
     benchmarks = Benchmark.query.filter(
-        (Benchmark.generic_benchmark == 1) |  # Show all generic benchmarks
-        (Benchmark.user_id == current_user.id)  # Show user's own benchmarks
-    ).order_by(Benchmark.benchmark_name).all()
-    
+        (Benchmark.generic_benchmark == 1) | 
+        (Benchmark.user_id == current_user.id)
+    ).all()
+
     if request.method == 'POST':
-        # Get form data and strip whitespace
-        fund_name = request.form.get('fund_name', '').strip()
-        long_name = request.form.get('long_name', '').strip()
-        one_word_name = request.form.get('one_word_name', '').strip()
-        ticker = request.form.get('ticker', '').strip()
-        identifier = request.form.get('identifier', '').strip()
-        vehicle = request.form.get('vehicle', '').strip()
-        benchmark_id = request.form.get('benchmark_id', '').strip()
-        
-        # Handle generic_fund field first
-        if current_user.is_admin():
-            generic_fund = request.form.get('generic_fund', '0')
-            try:
-                generic_fund = int(generic_fund)
-                if generic_fund not in [0, 1]:
-                    flash('Invalid fund type selected', 'error')
-                    return render_template('new_fund.html', 
-                                        benchmarks=benchmarks,
-                                        vehicles=VEHICLE)
-            except ValueError:
-                flash('Invalid fund type value', 'error')
-                return render_template('new_fund.html', 
-                                    benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
-        else:
-            generic_fund = 0  # Regular users can only create user-specific funds
-        
-        # Validate required fields
-        required_fields = {
-            'fund_name': fund_name,
-            'benchmark_id': benchmark_id
-        }
-        
-        for field, value in required_fields.items():
-            if not value:
-                flash(f'{field.replace("_", " ").title()} is required', 'error')
-                return render_template('new_fund.html', 
-                                    benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
-        
-        # Validate numeric fields
-        price = request.form.get('price')
-        if price:
-            try:
-                price = float(price)
-            except ValueError:
-                flash('Invalid price value. Please enter a valid number.', 'error')
-                return render_template('new_fund.html', 
-                                    benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
-        
-        # Validate date
-        date = request.form.get('date')
-        if date:
-            try:
-                date = datetime.strptime(date, '%Y-%m-%d').date()
-            except ValueError:
-                flash('Invalid date format', 'error')
-                return render_template('new_fund.html', 
-                                    benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
-        
         try:
+            # Get form data and strip whitespace
+            fund_name = request.form.get('fund_name', '').strip()
+            long_name = request.form.get('long_name', '').strip()
+            one_word_name = request.form.get('one_word_name', '').strip()
+            ticker = request.form.get('ticker', '').strip()
+            identifier = request.form.get('identifier', '').strip()
+            vehicle = request.form.get('vehicle', '').strip()
+            benchmark_id = request.form.get('benchmark_id', '').strip()
+            
+            # Handle generic_fund field
+            if current_user.is_admin():
+                generic_fund = request.form.get('generic_fund', '0')
+                if generic_fund not in ['0', '1']:
+                    flash('Invalid fund type selected.', 'error')
+                    return render_template('new_fund.html', benchmarks=benchmarks, vehicles=VEHICLE)
+            else:
+                generic_fund = '0'  # Non-admin users can only create user-specific funds
+
+            # Validate required fields
+            required_fields = {
+                'fund_name': fund_name,
+                'long_name': long_name,
+                'one_word_name': one_word_name,
+                'ticker': ticker,
+                'identifier': identifier,
+                'vehicle': vehicle,
+                'benchmark_id': benchmark_id
+            }
+            
+            for field, value in required_fields.items():
+                if not value:
+                    flash(f'{field.replace("_", " ").title()} is required.', 'error')
+                    return render_template('new_fund.html', benchmarks=benchmarks, vehicles=VEHICLE)
+
             # Create new fund
             new_fund = Fund(
                 fund_name=fund_name,
-                long_name=long_name if long_name else None,
-                one_word_name=one_word_name if one_word_name else None,
-                ticker=ticker if ticker else None,
-                identifier=identifier if identifier else None,
-                price=price,
-                date=date,
-                vehicle=vehicle if vehicle else None,
+                long_name=long_name,
+                one_word_name=one_word_name,
+                ticker=ticker,
+                identifier=identifier,
+                vehicle=vehicle,
                 benchmark_id=benchmark_id,
                 user_id=current_user.id,
-                generic_fund=generic_fund
+                generic_fund=int(generic_fund)
             )
-            
+
             db.session.add(new_fund)
             db.session.commit()
             flash('Fund created successfully!', 'success')
             return redirect(url_for('get_funds'))
-            
+
         except Exception as e:
             db.session.rollback()
             flash(f'Error creating fund: {str(e)}', 'error')
-            return render_template('new_fund.html', 
-                                benchmarks=benchmarks,
-                                vehicles=VEHICLE)
-    
-    return render_template('new_fund.html', 
-                         benchmarks=benchmarks,
-                         vehicles=VEHICLE)
+            return render_template('new_fund.html', benchmarks=benchmarks, vehicles=VEHICLE)
+
+    return render_template('new_fund.html', benchmarks=benchmarks, vehicles=VEHICLE)
 
 @app.route('/delete_fund/<int:id>', methods=['GET'])
 def delete_fund(id):
@@ -1213,11 +1182,21 @@ def edit_fund(id):
         flash('You do not have permission to edit this fund', 'error')
         return redirect(url_for('get_funds'))
     
-    # Load benchmarks and vehicles
+    # Load benchmarks and prepare form options
     benchmarks = Benchmark.query.filter(
         (Benchmark.generic_benchmark == 1) |  # Show all generic benchmarks
         (Benchmark.user_id == current_user.id)  # Show user's own benchmarks
     ).order_by(Benchmark.benchmark_name).all()
+    
+    # Prepare form options
+    form_options = {
+        'asset_classes': ASSET_CLASSES,
+        'regions': REGIONS,
+        'market_types': MARKET_TYPES,
+        'bond_ratings': BOND_RATING,
+        'bond_types': BOND_TYPES,
+        'vehicles': VEHICLE
+    }
     
     if request.method == 'POST':
         # Get form data and strip whitespace
@@ -1239,13 +1218,13 @@ def edit_fund(id):
                     return render_template('edit_fund.html', 
                                         fund=fund,
                                         benchmarks=benchmarks,
-                                        vehicles=VEHICLE)
+                                        form_options=form_options)
             except ValueError:
                 flash('Invalid fund type value', 'error')
                 return render_template('edit_fund.html', 
                                     fund=fund,
                                     benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
+                                    form_options=form_options)
         else:
             generic_fund = fund.generic_fund  # Keep existing value for non-admins
         
@@ -1261,7 +1240,7 @@ def edit_fund(id):
                 return render_template('edit_fund.html', 
                                     fund=fund,
                                     benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
+                                    form_options=form_options)
         
         # Validate numeric fields
         price = request.form.get('price')
@@ -1273,7 +1252,7 @@ def edit_fund(id):
                 return render_template('edit_fund.html', 
                                     fund=fund,
                                     benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
+                                    form_options=form_options)
         
         # Validate date
         date = request.form.get('date')
@@ -1285,7 +1264,7 @@ def edit_fund(id):
                 return render_template('edit_fund.html', 
                                     fund=fund,
                                     benchmarks=benchmarks,
-                                    vehicles=VEHICLE)
+                                    form_options=form_options)
         
         try:
             # Update fund fields
@@ -1310,12 +1289,12 @@ def edit_fund(id):
             return render_template('edit_fund.html', 
                                 fund=fund,
                                 benchmarks=benchmarks,
-                                vehicles=VEHICLE)
+                                form_options=form_options)
     
     return render_template('edit_fund.html', 
                          fund=fund,
                          benchmarks=benchmarks,
-                         vehicles=VEHICLE)
+                         form_options=form_options)
 
 @app.route('/view_benchmark/<int:id>')
 @login_required
@@ -1439,6 +1418,18 @@ def forgot_password():
 @app.context_processor
 def inject_now():
     return {'now': datetime.utcnow()}
+
+@app.route('/view_fund/<int:id>')
+@login_required
+def view_fund(id):
+    fund = Fund.query.get_or_404(id)
+    
+    # Check if user has permission to view
+    if not current_user.is_admin() and fund.user_id != current_user.id and not fund.generic_fund:
+        flash('You do not have permission to view this fund', 'error')
+        return redirect(url_for('get_funds'))
+    
+    return render_template('view_fund.html', fund=fund)
 
 if __name__ == '__main__':
     with app.app_context():

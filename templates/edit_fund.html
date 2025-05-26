@@ -65,7 +65,7 @@
                                 <label class="form-label">Vehicle</label>
                                 <select class="form-select" name="vehicle">
                                     <option value="">Select Vehicle</option>
-                                    {% for vehicle in vehicles %}
+                                    {% for vehicle in form_options.vehicles %}
                                     <option value="{{ vehicle }}" {% if fund.vehicle == vehicle %}selected{% endif %}>{{ vehicle }}</option>
                                     {% endfor %}
                                 </select>
