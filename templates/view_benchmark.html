@@ -3,183 +3,182 @@
 {% block title %}{{ benchmark.benchmark_name }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-4">
+<div class="container-fluid px-4">
     <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-start mb-4">
+
+    <div class="header-section mb-4">
         <div class="d-flex flex-column">
-            <h2 class="mb-2">{{ benchmark.benchmark_name }}</h2>
-            <div class="d-flex flex-column gap-1">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-{{ 'globe' if benchmark.generic_benchmark else 'user' }} me-2" 
-                       style="color: {{ '#0d6efd' if benchmark.generic_benchmark else '#6c757d' }}"></i>
-                    <span class="text-muted">
-                        {{ 'Generic benchmark' if benchmark.generic_benchmark else 'User specific benchmark' }}
-                    </span>
-                </div>
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-calendar-alt me-2 text-muted"></i>
-                    <span class="text-muted">Created: {{ benchmark.created_at.strftime('%Y-%m-%d') }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="d-flex gap-2">
-            {% if current_user.is_admin() or benchmark.user_id == current_user.id %}
-            <a href="{{ url_for('edit_benchmark', id=benchmark.id) }}" class="btn btn-primary">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-            {% endif %}
-            <a href="{{ url_for('get_benchmarks') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
+            <h2 class="main-title">{{ benchmark.benchmark_name }}</h2>
+            <h4 class="subtitle">View the details of this benchmark</h4>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="row">
-        <!-- Left Column - Basic Information -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Basic Information
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="info-grid">
-                        <!-- First Row -->
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">Asset Class</span>
-                                    <span class="info-value">{{ benchmark.asset_class or 'N/A' }}</span>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Basic Information Section -->
+                        <div class="col-md-6 border-end">
+                            <h5 class="section-title mb-4">
+                                <i class="fas fa-info-circle me-2"></i>Basic Information
+                            </h5>
+                            <div class="row g-3">
+                                <!-- Row 1 -->
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Asset Class</span>
+                                        <span class="info-value">{{ benchmark.asset_class or 'N/A' }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">Region</span>
-                                    <span class="info-value">{{ benchmark.region or 'N/A' }}</span>
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Benchmark Type</span>
+                                        <span class="info-value">
+                                            <i class="fas fa-{{ 'globe' if benchmark.generic_benchmark else 'user' }} me-1" 
+                                               style="color: {{ '#0d6efd' if benchmark.generic_benchmark else '#6c757d' }}"></i>
+                                            {{ 'Generic' if benchmark.generic_benchmark else 'User' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Row 2 -->
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Region</span>
+                                        <span class="info-value">{{ benchmark.region or 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Market Type</span>
+                                        <span class="info-value">{{ benchmark.developed or 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                <!-- Row 3 -->
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Bond Type</span>
+                                        <span class="info-value">{{ benchmark.bond_type or 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Bond Rating</span>
+                                        <span class="info-value">{{ benchmark.bond_rating or 'N/A' }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Second Row -->
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">Market Type</span>
-                                    <span class="info-value">{{ benchmark.developed or 'N/A' }}</span>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">Bond Type</span>
-                                    <span class="info-value">{{ benchmark.bond_type or 'N/A' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Third Row -->
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">Bond Rating</span>
-                                    <span class="info-value">{{ benchmark.bond_rating or 'N/A' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Right Column - Risk Metrics -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line me-2"></i>Risk Metrics
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="info-grid">
-                        <!-- First Row -->
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <div class="info-item">
-                                    <span class="info-label">Risk Factor</span>
-                                    <span class="info-value">{{ benchmark.risk_factor.name if benchmark.risk_factor else 'N/A' }}</span>
+                        <!-- Risk Metrics Section -->
+                        <div class="col-md-6 ps-md-4">
+                            <h5 class="section-title mb-4">
+                                <i class="fas fa-chart-line me-2"></i>Risk Metrics
+                            </h5>
+                            <div class="row g-3">
+                                <!-- Row 1 -->
+                                <div class="col-12">
+                                    <div class="info-item">
+                                        <span class="info-label">Risk Factor</span>
+                                        <span class="info-value">{{ benchmark.risk_factor.name if benchmark.risk_factor else 'N/A' }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <!-- Second Row -->
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">Beta</span>
-                                    <span class="info-value">{{ "%.2f"|format(benchmark.beta) if benchmark.beta is not none else 'N/A' }}</span>
+                                <!-- Row 2 -->
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Beta</span>
+                                        <span class="info-value">{{ "%.2f"|format(benchmark.beta) if benchmark.beta is not none else 'N/A' }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">Modified Duration</span>
-                                    <span class="info-value">{{ "%.2f"|format(benchmark.mod_duration) if benchmark.mod_duration is not none else 'N/A' }}</span>
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">Duration</span>
+                                        <span class="info-value">{{ "%.2f"|format(benchmark.mod_duration) if benchmark.mod_duration is not none else 'N/A' }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <!-- Third Row -->
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">FX</span>
-                                    <span class="info-value">{{ "%.0f"|format(benchmark.fx * 100) if benchmark.fx is not none else 'N/A' }}%</span>
+                                <!-- Row 3 -->
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">FX</span>
+                                        <span class="info-value">{{ "%.0f"|format(benchmark.fx * 100) if benchmark.fx is not none else 'N/A' }}%</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">USD</span>
-                                    <span class="info-value">{{ "%.0f"|format(benchmark.usd * 100) if benchmark.usd is not none else 'N/A' }}%</span>
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">USD</span>
+                                        <span class="info-value">{{ "%.0f"|format(benchmark.usd * 100) if benchmark.usd is not none else 'N/A' }}%</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <!-- Fourth Row -->
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="info-item">
-                                    <span class="info-label">US</span>
-                                    <span class="info-value">{{ "%.0f"|format(benchmark.us * 100) if benchmark.us is not none else 'N/A' }}%</span>
+                                <!-- Row 4 -->
+                                <div class="col-6">
+                                    <div class="info-item">
+                                        <span class="info-label">US</span>
+                                        <span class="info-value">{{ "%.0f"|format(benchmark.us * 100) if benchmark.us is not none else 'N/A' }}%</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Edit Link -->
+            {% if current_user.is_admin() or (not benchmark.generic_benchmark and benchmark.user_id == current_user.id) %}
+            <div class="text-end mt-3">
+                <a href="{{ url_for('edit_benchmark', id=benchmark.id) }}" class="edit-link">
+                    <i class="fas fa-edit me-1"></i>Edit Benchmark
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <style>
+
+
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+
+
 .card {
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
 }
 
-.card-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background-color: #f8f9fa;
-}
-
-.card-title {
+.section-title {
     color: var(--text-color);
     font-weight: 600;
-}
-
-.info-grid {
-    display: flex;
-    flex-direction: column;
+    font-size: 1.1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .info-item {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    height: 100%;
 }
 
 .info-label {
@@ -194,21 +193,33 @@
     font-weight: 500;
 }
 
-.btn {
-    padding: 0.5rem 1rem;
+.edit-link {
+    color: var(--primary-color);
+    text-decoration: none;
     font-weight: 500;
-    transition: all 0.2s ease-in-out;
+    font-size: 1rem;
+    transition: color 0.2s ease;
 }
 
-.btn-outline-secondary:hover {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
+.edit-link:hover {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+.border-end {
+    border-right: 1px solid var(--border-color) !important;
 }
 
 @media (max-width: 768px) {
-    .info-value {
-        font-size: 1rem;
+    .border-end {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        padding-bottom: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .ps-md-4 {
+        padding-left: 0 !important;
     }
 }
 </style>
