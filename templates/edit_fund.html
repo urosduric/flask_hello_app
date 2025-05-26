@@ -3,232 +3,147 @@
 {% block title %}Edit Fund{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">
-                    <i class="fas fa-edit text-primary me-2"></i>
-                    Edit Fund: {{ fund.fund_name }}
-                </h2>
-                <a href="{{ url_for('get_funds') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Funds
-                </a>
-            </div>
+<div class="container-fluid px-4">
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">Edit Fund</h2>
+            <h4 class="subtitle">Modify fund details</h4>
         </div>
     </div>
 
-    {% if error %}
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ error }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endif %}
-
-    {% if success %}
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ success }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endif %}
-
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Basic Information</h5>
-                </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label">Fund Name</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="fund_name">{{ fund.fund_name }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('fund_name')">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Fund Type -->
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Fund Type</label>
+                                {% if current_user.is_admin() %}
+                                <select class="form-select" name="generic_fund" required>
+                                    <option value="0" {% if not fund.generic_fund %}selected{% endif %}>User Specific Fund</option>
+                                    <option value="1" {% if fund.generic_fund %}selected{% endif %}>Generic Fund</option>
+                                </select>
+                                {% else %}
+                                <input type="text" class="form-control" value="{% if fund.generic_fund %}Generic Fund{% else %}User Specific Fund{% endif %}" readonly>
+                                <input type="hidden" name="generic_fund" value="{{ fund.generic_fund }}">
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Long Name</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="long_name">{{ fund.long_name }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('long_name')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">One Word Name</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="one_word_name">{{ fund.one_word_name }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('one_word_name')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ticker</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="ticker">{{ fund.ticker }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('ticker')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Identifier</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="identifier">{{ fund.identifier }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('identifier')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Additional Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label">Price</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="price">{{ fund.price }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('price')">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fund Name</label>
+                                <input type="text" class="form-control" name="fund_name" value="{{ fund.fund_name }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Long Name</label>
+                                <input type="text" class="form-control" name="long_name" value="{{ fund.long_name or '' }}">
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Date</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="date">{{ fund.date }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('date')">
-                                <i class="fas fa-edit"></i>
-                            </button>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">One Word Name</label>
+                                <input type="text" class="form-control" name="one_word_name" value="{{ fund.one_word_name or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ticker</label>
+                                <input type="text" class="form-control" name="ticker" value="{{ fund.ticker or '' }}">
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Vehicle</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="vehicle">{{ fund.vehicle }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('vehicle')">
-                                <i class="fas fa-edit"></i>
-                            </button>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Identifier</label>
+                                <input type="text" class="form-control" name="identifier" value="{{ fund.identifier or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vehicle</label>
+                                <select class="form-select" name="vehicle">
+                                    <option value="">Select Vehicle</option>
+                                    {% for vehicle in vehicles %}
+                                    <option value="{{ vehicle }}" {% if fund.vehicle == vehicle %}selected{% endif %}>{{ vehicle }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Benchmark</label>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="benchmark_id">{{ fund.benchmark.benchmark_name if fund.benchmark else 'None' }}</span>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editField('benchmark_id')">
-                                <i class="fas fa-edit"></i>
-                            </button>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price</label>
+                                <input type="number" step="0.01" class="form-control" name="price" value="{{ fund.price or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" value="{{ fund.date.strftime('%Y-%m-%d') if fund.date else '' }}">
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Benchmark</label>
+                                <select class="form-select" name="benchmark_id" required>
+                                    <option value="">Select Benchmark</option>
+                                    {% for benchmark in benchmarks %}
+                                    <option value="{{ benchmark.id }}" {% if fund.benchmark_id == benchmark.id %}selected{% endif %}>{{ benchmark.benchmark_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Update Fund</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Modal -->
-<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editModalLabel">Edit Field</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editForm" method="POST">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="editValue" class="form-label" id="editLabel">Value</label>
-                        <input type="text" class="form-control" id="editValue" name="value" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{% endblock %}
-
-{% block scripts %}
-<script>
-let currentField = '';
-
-function editField(field) {
-    currentField = field;
-    const modal = new bootstrap.Modal(document.getElementById('editModal'));
-    const label = document.getElementById('editLabel');
-    const value = document.getElementById('editValue');
-    const form = document.getElementById('editForm');
-    
-    // Set the label and value based on the field
-    label.textContent = field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-    value.value = document.getElementById(field).textContent;
-    
-    // Set the form action
-    form.action = `{{ url_for('edit_fund', id=fund.id) }}?field=${field}`;
-    
-    // Show the modal
-    modal.show();
-}
-</script>
-{% endblock %}
-
-{% block styles %}
 <style>
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
 .card {
     border: none;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-label {
     font-weight: 500;
-    color: #6c757d;
+    color: var(--text-color);
 }
 
-.btn-outline-primary {
-    border-width: 1px;
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
 }
 
-.btn-outline-primary:hover {
-    transform: translateY(-1px);
-}
-
-#editModal .modal-content {
-    border: none;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-}
-
-#editModal .modal-header {
+.form-control[readonly] {
     background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-}
-
-#editModal .form-control:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    cursor: not-allowed;
 }
 </style>
 {% endblock %} 

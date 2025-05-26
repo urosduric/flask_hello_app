@@ -23,6 +23,23 @@
                 <div class="card-body">
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Fund Type -->
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Fund Type</label>
+                                {% if current_user.is_admin() %}
+                                <select class="form-select" name="generic_fund" required>
+                                    <option value="0">User Specific Fund</option>
+                                    <option value="1">Generic Fund</option>
+                                </select>
+                                {% else %}
+                                <input type="text" class="form-control" value="User Specific Fund" readonly>
+                                <input type="hidden" name="generic_fund" value="0">
+                                {% endif %}
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Fund Name</label>
@@ -52,7 +69,12 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Vehicle</label>
-                                <input type="text" class="form-control" name="vehicle">
+                                <select class="form-select" name="vehicle">
+                                    <option value="">Select Vehicle</option>
+                                    {% for vehicle in vehicles %}
+                                    <option value="{{ vehicle }}">{{ vehicle }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
 
@@ -70,7 +92,7 @@
                         <div class="row">
                             <div class="col-12 mb-3">
                                 <label class="form-label">Benchmark</label>
-                                <select class="form-select" name="benchmark_id">
+                                <select class="form-select" name="benchmark_id" required>
                                     <option value="">Select Benchmark</option>
                                     {% for benchmark in benchmarks %}
                                     <option value="{{ benchmark.id }}">{{ benchmark.benchmark_name }}</option>
@@ -90,8 +112,6 @@
 </div>
 
 <style>
-
-
 .header-section {
     padding: 2rem 0;
     margin-bottom: 2rem;
@@ -112,9 +132,6 @@
     margin-bottom: 0;
 }
 
-
-
-
 .card {
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -128,6 +145,11 @@
 .form-control:focus, .form-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
 }
 </style>
 {% endblock %} 
