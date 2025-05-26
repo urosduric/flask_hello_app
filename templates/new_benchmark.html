@@ -4,9 +4,12 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Add New Benchmark</h2>
-        <a href="{{ url_for('get_benchmarks') }}" class="btn btn-secondary">Back to Benchmarks</a>
+
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">Add new benchmark</h2>
+            <h4 class="subtitle">Add allocation details to your funds</h4>
+        </div>
     </div>
 
     {% if error %}
@@ -28,6 +31,21 @@
                                 <input type="text" class="form-control" id="benchmark_name" name="benchmark_name" required>
                             </div>
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Benchmark Type</label>
+                                {% if current_user.is_admin() %}
+                                    <select class="form-select" id="generic_benchmark" name="generic_benchmark" required>
+                                        <option value="0">User Specific Benchmark</option>
+                                        <option value="1">Generic Benchmark</option>
+                                    </select>
+                                {% else %}
+                                    <input type="text" class="form-control" value="User Specific Benchmark" readonly>
+                                    <input type="hidden" name="generic_benchmark" value="0">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Risk Factor</label>
                                 <select class="form-select" id="risk_factor_id" name="risk_factor_id" required>
                                     <option value="">Select Risk Factor</option>
@@ -36,9 +54,6 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Asset Class</label>
                                 <select class="form-select" id="asset_class" name="asset_class" required>
@@ -48,6 +63,9 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Region</label>
                                 <select class="form-select" id="region" name="region" required>
@@ -57,9 +75,6 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Market Type</label>
                                 <select class="form-select" id="developed" name="developed" required>
@@ -69,35 +84,35 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Beta</label>
                                 <input type="number" step="any" class="form-control" id="beta" name="beta" required>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Modified Duration</label>
                                 <input type="number" step="any" class="form-control" id="mod_duration" name="mod_duration" required>
                             </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">FX</label>
                                 <input type="number" step="any" class="form-control" id="fx" name="fx" required>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">USD</label>
                                 <input type="number" step="any" class="form-control" id="usd" name="usd" required>
                             </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">US</label>
                                 <input type="number" step="any" class="form-control" id="us" name="us" required>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Bond Rating</label>
                                 <select class="form-select" id="bond_rating" name="bond_rating">
@@ -107,6 +122,9 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Bond Type</label>
                                 <select class="form-select" id="bond_type" name="bond_type">
@@ -129,6 +147,26 @@
 </div>
 
 <style>
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
 .card {
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -142,6 +180,12 @@
 .form-control:focus, .form-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Style for readonly input */
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
 }
 </style>
 

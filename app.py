@@ -528,41 +528,93 @@ def new_benchmark():
     }
     
     if request.method == 'POST':
-        benchmark_name = request.form.get('benchmark_name')
-        risk_factor_id = request.form.get('risk_factor_id')
-        beta = request.form.get('beta')
-        mod_duration = request.form.get('mod_duration')
-        fx = request.form.get('fx')
-        usd = request.form.get('usd')
-        us = request.form.get('us')
-        asset_class = request.form.get('asset_class')
-        region = request.form.get('region')
-        developed = request.form.get('developed')
-        bond_rating = request.form.get('bond_rating')
-        bond_type = request.form.get('bond_type')
+        # Get form data and strip whitespace
+        benchmark_name = request.form.get('benchmark_name', '').strip()
+        risk_factor_id = request.form.get('risk_factor_id', '').strip()
+        asset_class = request.form.get('asset_class', '').strip()
+        region = request.form.get('region', '').strip()
+        developed = request.form.get('developed', '').strip()
         
-        # Create new benchmark
-        new_benchmark = Benchmark(
-            benchmark_name=benchmark_name,
-            user_id=current_user.id,
-            risk_factor_id=risk_factor_id,
-            beta=float(beta) if beta else None,
-            mod_duration=float(mod_duration) if mod_duration else None,
-            fx=float(fx) if fx else None,
-            usd=float(usd) if usd else None,
-            us=float(us) if us else None,
-            asset_class=asset_class,
-            region=region,
-            developed=developed,
-            bond_rating=bond_rating,
-            bond_type=bond_type
-        )
+        # Handle generic_benchmark field first
+        if current_user.is_admin():
+            generic_benchmark = request.form.get('generic_benchmark', '0')
+            try:
+                generic_benchmark = int(generic_benchmark)
+                if generic_benchmark not in [0, 1]:
+                    flash('Invalid benchmark type selected', 'error')
+                    return render_template('new_benchmark.html', 
+                                        risk_factors=risk_factors,
+                                        form_options=form_options)
+            except ValueError:
+                flash('Invalid benchmark type value', 'error')
+                return render_template('new_benchmark.html', 
+                                    risk_factors=risk_factors,
+                                    form_options=form_options)
+        else:
+            generic_benchmark = 0  # Regular users can only create user-specific benchmarks
+        
+        # Validate required fields
+        required_fields = {
+            'benchmark_name': benchmark_name,
+            'risk_factor_id': risk_factor_id,
+            'asset_class': asset_class,
+            'region': region,
+            'developed': developed
+        }
+        
+        for field, value in required_fields.items():
+            if not value:
+                flash(f'{field.replace("_", " ").title()} is required', 'error')
+                return render_template('new_benchmark.html', 
+                                    risk_factors=risk_factors,
+                                    form_options=form_options)
+        
+        # Validate numeric fields
+        numeric_fields = {
+            'beta': request.form.get('beta'),
+            'mod_duration': request.form.get('mod_duration'),
+            'fx': request.form.get('fx'),
+            'usd': request.form.get('usd'),
+            'us': request.form.get('us')
+        }
+        
+        numeric_values = {}
+        for field, value in numeric_fields.items():
+            if value:
+                try:
+                    numeric_values[field] = float(value)
+                except ValueError:
+                    flash(f'Invalid value for {field}. Please enter a valid number.', 'error')
+                    return render_template('new_benchmark.html', 
+                                        risk_factors=risk_factors,
+                                        form_options=form_options)
+            else:
+                numeric_values[field] = None
         
         try:
+            # Create new benchmark
+            new_benchmark = Benchmark(
+                benchmark_name=benchmark_name,
+                user_id=current_user.id,
+                generic_benchmark=generic_benchmark,
+                risk_factor_id=risk_factor_id,
+                beta=numeric_values['beta'],
+                mod_duration=numeric_values['mod_duration'],
+                fx=numeric_values['fx'],
+                usd=numeric_values['usd'],
+                us=numeric_values['us'],
+                asset_class=asset_class,
+                region=region,
+                developed=developed,
+                bond_rating=request.form.get('bond_rating'),
+                bond_type=request.form.get('bond_type')
+            )
+            
             db.session.add(new_benchmark)
             db.session.commit()
             flash('Benchmark created successfully!', 'success')
             return redirect(url_for('get_benchmarks'))
+            
         except Exception as e:
             db.session.rollback()
             flash(f'Error creating benchmark: {str(e)}', 'error')
@@ -1003,30 +1055,69 @@ def edit_benchmark(id):
     }
     
     if request.method == 'POST':
+        # Get form data and strip whitespace
+        benchmark_name = request.form.get('benchmark_name', '').strip()
+        risk_factor_id = request.form.get('risk_factor_id', '').strip()
+        asset_class = request.form.get('asset_class', '').strip()
+        region = request.form.get('region', '').strip()
+        developed = request.form.get('developed', '').strip()
+        
+        # Validate required fields
+        required_fields = {
+            'benchmark_name': benchmark_name,
+            'risk_factor_id': risk_factor_id,
+            'asset_class': asset_class,
+            'region': region,
+            'developed': developed
+        }
+        
+        for field, value in required_fields.items():
+            if not value:
+                flash(f'{field.replace("_", " ").title()} is required', 'error')
+                return render_template('edit_benchmark.html', 
+                                    benchmark=benchmark,
+                                    risk_factors=risk_factors,
+                                    form_options=form_options)
+        
+        # Validate numeric fields
+        numeric_fields = {
+            'beta': request.form.get('beta'),
+            'mod_duration': request.form.get('mod_duration'),
+            'fx': request.form.get('fx'),
+            'usd': request.form.get('usd'),
+            'us': request.form.get('us')
+        }
+        
+        numeric_values = {}
+        for field, value in numeric_fields.items():
+            if value:
+                try:
+                    numeric_values[field] = float(value)
+                except ValueError:
+                    flash(f'Invalid value for {field}. Please enter a valid number.', 'error')
+                    return render_template('edit_benchmark.html', 
+                                        benchmark=benchmark,
+                                        risk_factors=risk_factors,
+                                        form_options=form_options)
+            else:
+                numeric_values[field] = None
+        
         try:
             # Update benchmark fields
-            benchmark.benchmark_name = request.form.get('benchmark_name')
-            benchmark.risk_factor_id = request.form.get('risk_factor_id')
-            benchmark.asset_class = request.form.get('asset_class')
-            benchmark.region = request.form.get('region')
-            benchmark.developed = request.form.get('developed')
+            benchmark.benchmark_name = benchmark_name
+            benchmark.risk_factor_id = risk_factor_id
+            benchmark.asset_class = asset_class
+            benchmark.region = region
+            benchmark.developed = developed
             benchmark.bond_rating = request.form.get('bond_rating')
             benchmark.bond_type = request.form.get('bond_type')
             
-            # Handle numeric fields with validation
-            for field in ['beta', 'mod_duration', 'fx', 'usd', 'us']:
-                value = request.form.get(field)
-                if value:
-                    try:
-                        setattr(benchmark, field, float(value))
-                    except ValueError:
-                        flash(f'Invalid value for {field}. Please enter a valid number.', 'error')
-                        return render_template('edit_benchmark.html', 
-                                            benchmark=benchmark,
-                                            risk_factors=risk_factors,
-                                            form_options=form_options)
-                else:
-                    setattr(benchmark, field, None)
+            # Update numeric fields
+            benchmark.beta = numeric_values['beta']
+            benchmark.mod_duration = numeric_values['mod_duration']
+            benchmark.fx = numeric_values['fx']
+            benchmark.usd = numeric_values['usd']
+            benchmark.us = numeric_values['us']
             
             db.session.commit()
             flash('Benchmark updated successfully!', 'success')

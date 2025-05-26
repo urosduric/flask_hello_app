@@ -4,31 +4,17 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-start mb-4">
+   
+    <div class="header-section mb-4">
         <div class="d-flex flex-column">
-            <h2 class="mb-1">Edit Benchmark</h2>
-            <h4 class="text-muted fw-normal">{{ benchmark.benchmark_name }}</h4>
-        </div>
-        <div>
-            <a href="{{ url_for('get_benchmarks') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
+            <h2 class="main-title">Edit benchmark</h2>
+            <h4 class="subtitle">{{ benchmark.benchmark_name }}</h4>
         </div>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card edit-card">
+            <div class="card">
                 <div class="card-body">
                     <form method="POST" class="needs-validation" novalidate>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -154,7 +140,7 @@
                         </div>
 
                         <div class="text-end">
-                            <button type="submit" class="btn btn-warning text-dark fw-medium">Save Changes</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -164,6 +150,32 @@
 </div>
 
 <style>
+
+
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+
+
+
+
 .card {
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -209,5 +221,19 @@
         }, false)
     })
 })()
+</script>
+
+<script>
+// Add more specific error handling
+try:
+    db.session.commit()
+except SQLAlchemyError as e:
+    db.session.rollback()
+    flash('Database error occurred. Please try again.', 'error')
+    return render_template('edit_benchmark.html', ...)
+except Exception as e:
+    db.session.rollback()
+    flash('An unexpected error occurred. Please try again.', 'error')
+    return render_template('edit_benchmark.html', ...)
 </script>
 {% endblock %} 

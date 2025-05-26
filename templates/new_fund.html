@@ -4,9 +4,11 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Add New Fund</h2>
-        <a href="{{ url_for('get_funds') }}" class="btn btn-secondary">Back to Funds</a>
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">Add new fund</h2>
+            <h4 class="subtitle">Define new funds to use them in your portfolio</h4>
+        </div>
     </div>
 
     {% if error %}
@@ -88,6 +90,31 @@
 </div>
 
 <style>
+
+
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+
+
+
 .card {
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
