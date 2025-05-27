@@ -74,8 +74,8 @@
                                     </thead>
                                     <tbody>
                                         {% for fund in funds %}
-                                        <tr data-asset-class="{{ fund.benchmark.asset_class }}" data-fund-id="{{ fund.id }}">
-                                            <td class="text-truncate" style="max-width: 0;">{{ fund.fund_name }}</td>
+                                        <tr data-fund-id="{{ fund.id }}">
+                                            <td class="text-truncate" style="max-width: 0; cursor: pointer;" onclick="showLongName(this, '{{ fund.long_name }}')">{{ fund.fund_name }}</td>
                                             <td class="text-truncate" style="max-width: 0;">{{ fund.benchmark.asset_class or '-' }}</td>
                                             <td class="text-center">
                                                 {% if fund.generic_fund %}
@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         filteredRows = Array.from(rows).filter(row => {
             const name = row.cells[0].textContent.toLowerCase();
-            const assetClass = row.dataset.assetClass;
+            const assetClass = row.cells[1].textContent.trim();
             const isGeneric = row.querySelector('.fa-globe') !== null;
             
             const matchesSearch = name.includes(searchTerm);
@@ -509,6 +509,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial filter
     filterTable();
+
+    // Function to show long name tooltip
+    window.showLongName = function(element, longName) {
+        // Remove any existing tooltip
+        const existingTooltip = bootstrap.Tooltip.getInstance(element);
+        if (existingTooltip) {
+            existingTooltip.dispose();
+        }
+        
+        // Create new tooltip
+        const tooltip = new bootstrap.Tooltip(element, {
+            title: longName,
+            placement: 'top',
+            trigger: 'manual'
+        });
+        
+        // Show tooltip
+        tooltip.show();
+        
+        // Hide tooltip after 3 seconds
+        setTimeout(() => {
+            tooltip.hide();
+        }, 3000);
+    };
 });
 </script>
 {% endblock %} 
