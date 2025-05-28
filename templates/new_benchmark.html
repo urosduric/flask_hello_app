@@ -49,8 +49,14 @@
                                 <label class="form-label">Risk Factor</label>
                                 <select class="form-select" id="risk_factor_id" name="risk_factor_id" required>
                                     <option value="">Select Risk Factor</option>
-                                    {% for risk_factor in risk_factors %}
-                                    <option value="{{ risk_factor.id }}">{{ risk_factor.name }}</option>
+                                    {% for asset_class in form_options.asset_classes %}
+                                    <optgroup label="{{ asset_class }}">
+                                        {% for risk_factor in risk_factors %}
+                                            {% if risk_factor.asset_class == asset_class %}
+                                            <option value="{{ risk_factor.id }}">{{ risk_factor.name }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </optgroup>
                                     {% endfor %}
                                 </select>
                             </div>

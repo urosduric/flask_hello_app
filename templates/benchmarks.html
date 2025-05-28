@@ -12,12 +12,6 @@
         </div>
     </div>
 
-    {% if error %}
-    <div class="alert alert-danger" role="alert">
-        {{ error | safe }}
-    </div>
-    {% endif %}
-
     <div class="card" style="padding: 30px 20px 20px 20px;">
         <div class="card-body p-0">
             <div class="row g-0">
@@ -80,7 +74,7 @@
                                     </thead>
                                     <tbody>
                                         {% for benchmark in benchmarks %}
-                                        <tr data-asset-class="{{ benchmark.asset_class }}" data-benchmark-id="{{ benchmark.id }}">
+                                        <tr data-benchmark-id="{{ benchmark.id }}">
                                             <td class="text-truncate" style="max-width: 0;">{{ benchmark.benchmark_name }}</td>
                                             <td class="text-truncate" style="max-width: 0;">{{ benchmark.asset_class or '-' }}</td>
                                             <td class="text-center">
@@ -420,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         filteredRows = Array.from(table.querySelectorAll('tbody tr')).filter(row => {
             const name = row.cells[0].textContent.toLowerCase();
-            const assetClass = row.dataset.assetClass;
+            const assetClass = row.cells[1].textContent.trim();
             const isGeneric = row.querySelector('.fa-globe') !== null;
             
             const matchesSearch = name.includes(searchTerm);

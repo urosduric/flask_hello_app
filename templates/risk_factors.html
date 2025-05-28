@@ -65,7 +65,7 @@
                                     </thead>
                                     <tbody>
                                         {% for risk_factor in risk_factors %}
-                                        <tr data-asset-class="{{ risk_factor.asset_class }}">
+                                        <tr>
                                             <td class="text-truncate" style="max-width: 0;" title="{{ risk_factor.name }}">{{ risk_factor.name }}</td>
                                             <td class="text-truncate" style="max-width: 0;">{{ risk_factor.asset_class }}</td>
                                             <td class="text-end">
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         filteredRows = rows.filter(row => {
             const name = row.cells[0].textContent.toLowerCase();
-            const assetClass = row.dataset.assetClass;
+            const assetClass = row.cells[1].textContent.trim();
             
             const matchesSearch = name.includes(searchTerm);
             const matchesAssetClass = selectedAssetClass === 'all' || assetClass === selectedAssetClass;
