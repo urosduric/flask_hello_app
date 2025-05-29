@@ -343,10 +343,16 @@
 
                     {% if current_user.is_admin() %}
 <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="{{ url_for('admin_dashboard') }}">
+    <a class="nav-link dropdown-toggle" href="#" id="optionsDropdown" role="button" data-bs-toggle="dropdown">
         <i class="fas fa-user-shield me-1"></i>Admin
     </a>
     <ul class="dropdown-menu">
+        <li>
+            <a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-chart-bar"></i>Admin Dashboard
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
         <li>
             <a class="dropdown-item" href="{{ url_for('get_risk_factors') }}">
                 <i class="fas fa-exclamation-triangle"></i>Risk Factors

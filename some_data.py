@@ -18,13 +18,16 @@ REGIONS = [
     'Global',
     'North America',
     'Europe',
-    'Asia Pacific'
+    'Asia Pacific',
+    'Other'
 ]
 
 # Market Development Status
 MARKET_TYPES = [
     'Developed',
-    'Emerging Markets'
+    'Emerging Markets',
+    'All Countries',
+    'Other'
 ]
 
 # Bond Types
@@ -34,12 +37,15 @@ BOND_TYPES = [
     'Aggregate',
     'Inflation linked',
     'Other'
+    'Not Applicable'
 ]
 
 # Bond rating
 BOND_RATING = [
     'Investment grade',
-    'High yield'
+    'High yield',
+    'Other',
+    'Not Applicable'
 ]
 
 # Vehicle

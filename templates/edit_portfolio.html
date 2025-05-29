@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Add New Portfolio{% endblock %}
+{% block title %}Edit Portfolio{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4">
     <div class="header-section mb-4">
         <div class="d-flex flex-column">
-            <h2 class="main-title">Add new portfolio</h2>
-            <h4 class="subtitle">Create a new portfolio to organize your investments</h4>
+            <h2 class="main-title">Edit portfolio</h2>
+            <h4 class="subtitle">Update your portfolio details</h4>
         </div>
     </div>
 
@@ -27,14 +27,15 @@
                         <div class="row">
                             <div class="col-12 mb-3">
                                 <label class="form-label">Portfolio Name</label>
-                                <input type="text" class="form-control" name="portfolio_name" maxlength="40" required>
+                                <input type="text" class="form-control" name="portfolio_name" value="{{ portfolio.portfolio_name }}" maxlength="40" required>
                                 <div class="invalid-feedback">Portfolio name is required and must be 40 characters or less.</div>
                                 <div class="form-text">Maximum 40 characters</div>
                             </div>
                         </div>
 
                         <div class="text-end">
-                            <button type="submit" class="btn btn-primary">Create Portfolio</button>
+                            <a href="{{ url_for('get_portfolios') }}" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Portfolio</button>
                         </div>
                     </form>
                 </div>

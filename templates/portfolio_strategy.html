@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}{{ portfolio.portfolio_name }} - Strategy{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">{{ portfolio.portfolio_name }}</h2>
+            <h4 class="subtitle">Portfolio Strategy & Holdings</h4>
+        </div>
+    </div>
+
+    <!-- Top Row: Comment and Strategy Cards -->
+    <div class="row mb-4">
+        <!-- Comment Card -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Comment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="comment-content">
+                        <p class="text-muted">Add your portfolio comments and notes here...</p>
+                        <!-- Placeholder for future comment functionality -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy Card -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Strategy</h5>
+                </div>
+                <div class="card-body">
+                    <div class="strategy-content">
+                        <p class="text-muted">Define your investment strategy and approach here...</p>
+                        <!-- Placeholder for future strategy functionality -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holdings Table Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Holdings</h5>
+                </div>
+                <div class="card-body">
+                    {% if holdings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 70%">Fund Name</th>
+                                    <th style="width: 30%" class="text-end">Strategic Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for holding in holdings %}
+                                <tr>
+                                    <td>
+                                        <div class="fund-info">
+                                            <div class="fund-name">{{ holding.fund.fund_name }}</div>
+                                            {% if holding.fund.ticker %}
+                                            <small class="text-muted">{{ holding.fund.ticker }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="strategic-weight">
+                                            {{ "%.1f"|format(holding.strategic_weight * 100) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-icon mb-3">
+                            <i class="fas fa-chart-pie fa-4x text-muted"></i>
+                        </div>
+                        <h6 class="text-muted">No Holdings Yet</h6>
+                        <p class="text-muted mb-0">Add funds to this portfolio to start building your strategy.</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Edit Strategy Button -->
+                    <div class="strategy-actions mt-4 pt-3 border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('view_portfolio', id=portfolio.id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Portfolio
+                            </a>
+                            <button type="button" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>Edit Strategy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.card-header {
+    background-color: var(--light-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+}
+
+.card-title {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Comment and Strategy cards */
+.comment-content, .strategy-content {
+    min-height: 120px;
+}
+
+/* Holdings table */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--light-bg);
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    padding: 0.75rem;
+}
+
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.fund-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.fund-name {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.strategic-weight {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Empty state */
+.empty-state {
+    padding: 3rem 1rem;
+}
+
+.empty-icon {
+    opacity: 0.5;
+}
+
+/* Strategy actions */
+.strategy-actions {
+    background-color: var(--light-bg);
+    margin: 0 -1.25rem -1.25rem -1.25rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: 2rem;
+    }
+    
+    .subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .comment-content, .strategy-content {
+        min-height: 80px;
+    }
+}
+</style>
+
+<script>
+// Placeholder for future strategy editing functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const editStrategyBtn = document.querySelector('.btn-primary');
+    
+    if (editStrategyBtn) {
+        editStrategyBtn.addEventListener('click', function() {
+            // Placeholder for edit strategy functionality
+            alert('Edit strategy functionality coming soon!');
+        });
+    }
+});
+</script>
+{% endblock %} 

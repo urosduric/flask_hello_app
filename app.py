@@ -63,7 +63,6 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     user_type = db.Column(db.String(20), default='beginner')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    birthday = db.Column(db.Date, nullable=True)
     
     # Relationships
     portfolios = db.relationship('Portfolio', backref='user', lazy=True)
@@ -92,11 +91,11 @@ class User(UserMixin, db.Model):
 class Portfolio(db.Model):
     __tablename__ = 'portfolio'
     id = db.Column(db.Integer, primary_key=True)
-    portfolio_name = db.Column(db.String(20), nullable=False)
+    portfolio_name = db.Column(db.String(40), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_default = db.Column(db.Integer, nullable=False, default=0)
-    paid_in = db.Column(db.Float, nullable=False, default=0.0)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    paid_in = db.Column(db.Float, nullable=True, default=0.0)
+    created_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'portfolio_name', name='unique_user_portfolio'),
@@ -135,7 +134,7 @@ class Holding(db.Model):
 
     def __repr__(self):
         return f'<Holding {self.fund.fund_name} in {self.portfolio.portfolio_name}>'
-
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -156,17 +155,17 @@ class Benchmark(db.Model):
     benchmark_name = db.Column(db.String(120), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     generic_benchmark = db.Column(db.Integer, nullable=False, default=0)
-    risk_factor_id = db.Column(db.Integer, db.ForeignKey('risk_factor.id'), nullable=True)
-    beta = db.Column(db.Float, nullable=True)
-    mod_duration = db.Column(db.Float, nullable=True)
-    fx = db.Column(db.Float, nullable=True)
-    usd = db.Column(db.Float, nullable=True)
-    us = db.Column(db.Float, nullable=True)
-    asset_class = db.Column(db.String(20), nullable=True)
-    region = db.Column(db.String(20), nullable=True)
-    developed = db.Column(db.String(20), nullable=True)
-    bond_rating = db.Column(db.String(20), nullable=True)
-    bond_type = db.Column(db.String(20), nullable=True)
+    risk_factor_id = db.Column(db.Integer, db.ForeignKey('risk_factor.id'), nullable=False)
+    beta = db.Column(db.Float, nullable=False, default=0.0)
+    mod_duration = db.Column(db.Float, nullable=False, default=0.0)
+    fx = db.Column(db.Float, nullable=False, default=0.0)
+    usd = db.Column(db.Float, nullable=False, default=0.0)
+    us = db.Column(db.Float, nullable=False, default=0.0)
+    asset_class = db.Column(db.String(20), nullable=False)
+    region = db.Column(db.String(20), nullable=False)
+    developed = db.Column(db.String(20), nullable=False)
+    bond_rating = db.Column(db.String(20), nullable=False)
+    bond_type = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     
     # Relationships
@@ -205,9 +204,9 @@ class Fund(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     benchmark_id = db.Column(db.Integer, db.ForeignKey('benchmark.id'), nullable=False)
     generic_fund = db.Column(db.Integer, nullable=False, default=0)
-    identifier = db.Column(db.String(50), nullable=True)
-    long_name = db.Column(db.String(200), nullable=True)
-    one_word_name = db.Column(db.String(50), nullable=True)
+    identifier = db.Column(db.String(50), nullable=False)
+    long_name = db.Column(db.String(200), nullable=False)
+    one_word_name = db.Column(db.String(20), nullable=False)
     price = db.Column(db.Float, nullable=True)
     date = db.Column(db.Date, nullable=True)
     ticker = db.Column(db.String(20), nullable=True)
@@ -481,14 +480,25 @@ def register():
             db.session.add(user)
             db.session.flush()  # This gets us the user.id
             
-            # Create default portfolio
+            # Create 3 portfolios
             default_portfolio = Portfolio(
                 portfolio_name="Default",
                 user_id=user.id,
                 is_default=1
             )
+            portfolio1 = Portfolio(
+                portfolio_name="Portfolio 1",
+                user_id=user.id,
+                is_default=0
+            )
+            portfolio2 = Portfolio(
+                portfolio_name="Portfolio 2",
+                user_id=user.id,
+                is_default=0
+            )
             db.session.add(default_portfolio)
-            
+            db.session.add(portfolio1)
+            db.session.add(portfolio2)
             # Commit transaction
             db.session.commit()
             
@@ -762,12 +772,44 @@ def new_fund():
 
     return render_template('new_fund.html', benchmarks=benchmarks, vehicles=VEHICLE)
 
-@app.route('/delete_fund/<int:id>', methods=['GET'])
+@app.route('/delete_fund/<int:id>', methods=['POST'])
+@login_required
 def delete_fund(id):
     fund = Fund.query.get_or_404(id)
-    db.session.delete(fund)
-    db.session.commit()
-    return redirect(url_for('get_funds'))
+    
+    # Check if user has permission to delete
+    if not current_user.is_admin() and fund.user_id != current_user.id:
+        flash('You do not have permission to delete this fund', 'error')
+        return redirect(url_for('get_funds'))
+    
+    # Check if fund has any related holdings
+    related_holdings = Holding.query.filter_by(fund_id=id).all()
+    if related_holdings:
+        portfolio_list = []
+        for holding in related_holdings:
+            portfolio_name = holding.portfolio.portfolio_name if holding.portfolio else 'Unknown Portfolio'
+            portfolio_list.append(f"• {portfolio_name}")
+        
+        error_message = "This fund is currently assigned to the following portfolios:\n"
+        error_message += "\n".join(portfolio_list)
+        error_message += "\n\nPlease remove this fund from these portfolios first before deleting it."
+        flash(error_message, 'error')
+        return redirect(url_for('get_funds'))
+    
+    try:
+        # Additional check to ensure we're not deleting a generic fund unless admin
+        if fund.generic_fund and not current_user.is_admin():
+            flash('You do not have permission to delete generic funds', 'error')
+            return redirect(url_for('get_funds'))
+            
+        db.session.delete(fund)
+        db.session.commit()
+        flash('Fund was successfully deleted', 'success')
+        return redirect(url_for('get_funds'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred while deleting the fund: {str(e)}', 'error')
+        return redirect(url_for('get_funds'))
 
 # Risk Factor routes
 @app.route('/get_risk_factors')
@@ -925,7 +967,7 @@ def delete_risk_factor(id):
 @app.route('/portfolios')
 @login_required
 def get_portfolios():
-    portfolios = Portfolio.query.filter_by(user_id=current_user.id).all()
+    portfolios = Portfolio.query.filter_by(user_id=current_user.id).order_by(Portfolio.is_default.desc(), Portfolio.portfolio_name).all()
     return render_template('portfolios.html', portfolios=portfolios)
 
 @app.route('/new_portfolio', methods=['GET', 'POST'])
@@ -934,11 +976,12 @@ def new_portfolio():
     if request.method == 'POST':
         portfolio_name = request.form.get('portfolio_name', '').strip()
         
+        # Validate portfolio name
         if not portfolio_name:
             return render_template('new_portfolio.html', error='Portfolio name is required')
             
-        if len(portfolio_name) > 20:
-            return render_template('new_portfolio.html', error='Portfolio name must be 20 characters or less')
+        if len(portfolio_name) > 40:
+            return render_template('new_portfolio.html', error='Portfolio name must be 40 characters or less')
         
         # Check if user already has a portfolio with this name
         existing_portfolio = Portfolio.query.filter_by(
@@ -953,13 +996,17 @@ def new_portfolio():
             new_portfolio = Portfolio(
                 portfolio_name=portfolio_name,
                 user_id=current_user.id,
-                is_default=0
+                is_default=0,  # Explicitly set to 0 (not default portfolio)
+                paid_in=0.0,   # Explicitly set to 0.0
+                created_at=datetime.utcnow()  # Explicitly set creation time
             )
             db.session.add(new_portfolio)
             db.session.commit()
+            flash('Portfolio created successfully!', 'success')
             return redirect(url_for('get_portfolios'))
         except Exception as e:
             db.session.rollback()
+            flash('An error occurred while creating the portfolio. Please try again.', 'error')
             return render_template('new_portfolio.html', error='An error occurred. Please try again.')
     
     return render_template('new_portfolio.html')
@@ -970,6 +1017,86 @@ def view_portfolio(id):
     portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     holdings = Holding.query.filter_by(portfolio_id=id).all()
     return render_template('view_portfolio.html', portfolio=portfolio, holdings=holdings)
+
+@app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_portfolio(id):
+    portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'POST':
+        portfolio_name = request.form.get('portfolio_name', '').strip()
+        
+        # Validate portfolio name
+        if not portfolio_name:
+            flash('Portfolio name is required', 'error')
+            return render_template('edit_portfolio.html', portfolio=portfolio, error='Portfolio name is required')
+            
+        if len(portfolio_name) > 40:
+            flash('Portfolio name must be 40 characters or less', 'error')
+            return render_template('edit_portfolio.html', portfolio=portfolio, error='Portfolio name must be 40 characters or less')
+        
+        # Check if user already has another portfolio with this name
+        existing_portfolio = Portfolio.query.filter_by(
+            user_id=current_user.id,
+            portfolio_name=portfolio_name
+        ).filter(Portfolio.id != id).first()
+        
+        if existing_portfolio:
+            flash('You already have a portfolio with this name', 'error')
+            return render_template('edit_portfolio.html', portfolio=portfolio, error='You already have a portfolio with this name')
+            
+        try:
+            portfolio.portfolio_name = portfolio_name
+            db.session.commit()
+            flash('Portfolio updated successfully!', 'success')
+            return redirect(url_for('get_portfolios'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while updating the portfolio. Please try again.', 'error')
+            return render_template('edit_portfolio.html', portfolio=portfolio, error='An error occurred. Please try again.')
+    
+    return render_template('edit_portfolio.html', portfolio=portfolio)
+
+@app.route('/delete_portfolio/<int:id>', methods=['POST'])
+@login_required
+def delete_portfolio(id):
+    portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
+    # Check if this is the default portfolio
+    if portfolio.is_default:
+        flash('Cannot delete the default portfolio', 'error')
+        return redirect(url_for('get_portfolios'))
+    
+    # Check if portfolio has any holdings
+    related_holdings = Holding.query.filter_by(portfolio_id=id).all()
+    if related_holdings:
+        fund_list = []
+        for holding in related_holdings:
+            fund_name = holding.fund.fund_name if holding.fund else 'Unknown Fund'
+            fund_list.append(f"• {fund_name}")
+        
+        error_message = "This portfolio contains the following funds:\n"
+        error_message += "\n".join(fund_list)
+        error_message += "\n\nPlease remove all funds from this portfolio before deleting it."
+        flash(error_message, 'error')
+        return redirect(url_for('get_portfolios'))
+    
+    try:
+        db.session.delete(portfolio)
+        db.session.commit()
+        flash('Portfolio was successfully deleted', 'success')
+        return redirect(url_for('get_portfolios'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred while deleting the portfolio: {str(e)}', 'error')
+        return redirect(url_for('get_portfolios'))
+
+@app.route('/portfolio/<int:id>/strategy')
+@login_required
+def portfolio_strategy(id):
+    portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    holdings = Holding.query.filter_by(portfolio_id=id).join(Fund).all()
+    return render_template('portfolio_strategy.html', portfolio=portfolio, holdings=holdings)
 
 # Holding routes
 @app.route('/add_fund_to_portfolio/<int:fund_id>', methods=['POST'])
