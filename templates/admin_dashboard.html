@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="header-section mb-4">
+        <div class="d-flex flex-column">
+            <h2 class="main-title">Admin Dashboard</h2>
+            <h4 class="subtitle">Manage users, data, and system configuration</h4>
+        </div>
+    </div>
+
+    <!-- Add admin functionality here -->
+    <div class="card p-4">
+        <p>This area is reserved for admin controls. Add content here as needed.</p>
+    </div>
+</div>
+
+<style>
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
