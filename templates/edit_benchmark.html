@@ -224,16 +224,6 @@
 </script>
 
 <script>
-// Add more specific error handling
-try:
-    db.session.commit()
-except SQLAlchemyError as e:
-    db.session.rollback()
-    flash('Database error occurred. Please try again.', 'error')
-    return render_template('edit_benchmark.html', ...)
-except Exception as e:
-    db.session.rollback()
-    flash('An unexpected error occurred. Please try again.', 'error')
-    return render_template('edit_benchmark.html', ...)
+
 </script>
 {% endblock %} 

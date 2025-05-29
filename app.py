@@ -1263,10 +1263,6 @@ def edit_fund(id):
                 fund.vehicle = vehicle
                 fund.benchmark_id = benchmark_id
                 
-                # Only admin can set generic_fund
-                if current_user.is_admin():
-                    fund.generic_fund = 'generic_fund' in request.form
-                
                 db.session.commit()
                 flash('Fund updated successfully.', 'success')
                 return redirect(url_for('get_funds'))
