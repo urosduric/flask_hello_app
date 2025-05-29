@@ -11,104 +11,110 @@
         </div>
     </div>
 
-
-
     {% if error %}
     <div class="alert alert-danger" role="alert">
         {{ error | safe }}
     </div>
     {% endif %}
 
-    <div class="card" style="padding: 30px 20px 20px 20px;">
-        <div class="card-body p-0">
-            <div class="row g-0">
-                <!-- Sidebar -->
-                <div class="col-md-3 border-end">
-                    <div class="p-3">
-                        <div class="list-group">
-                            <button type="button" class="list-group-item list-group-item-action active" data-asset-class="all">
-                                All Asset Classes
-                            </button>
-                            {% for asset_class in asset_classes %}
-                            <button type="button" class="list-group-item list-group-item-action" data-asset-class="{{ asset_class }}">
-                                {{ asset_class }}
-                            </button>
-                            {% endfor %}
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-2 text-primary"></i>
+                <h5 class="card-title mb-0">Risk Factor Management</h5>
+                <div class="ms-auto">
+                    {% if current_user.is_admin() %}
+                    <a href="{{ url_for('new_risk_factor') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Factor
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 30px 20px 20px 20px;">
+            <div class="p-0">
+                <div class="row g-0">
+                    <!-- Sidebar -->
+                    <div class="col-md-3 border-end">
+                        <div class="p-3">
+                            <div class="list-group">
+                                <button type="button" class="list-group-item list-group-item-action active" data-asset-class="all">
+                                    All Asset Classes
+                                </button>
+                                {% for asset_class in asset_classes %}
+                                <button type="button" class="list-group-item list-group-item-action" data-asset-class="{{ asset_class }}">
+                                    {{ asset_class }}
+                                </button>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Main Content -->
-                <div class="col-md-9">
-                    <div class="p-3 d-flex flex-column" style="height: 100%;">
-                        <!-- Search Bar -->
-                        <div class="mb-3">
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                                <input type="text" class="form-control" id="searchInput" placeholder="Search risk factors...">
-                            </div>
-                        </div>
-
-                        <!-- Table Container -->
-                        <div class="table-container flex-grow-1 d-flex flex-column">
-                            <!-- Table -->
-                            <div class="table-responsive flex-grow-1">
-                                <table class="table table-hover mb-0" id="riskFactorsTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 70%">Name</th>
-                                            <th style="width: 15%">Asset Class</th>
-                                            <th style="width: 15%; text-align: right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for risk_factor in risk_factors %}
-                                        <tr>
-                                            <td class="text-truncate" style="max-width: 0;" title="{{ risk_factor.name }}">{{ risk_factor.name }}</td>
-                                            <td class="text-truncate" style="max-width: 0;">{{ risk_factor.asset_class }}</td>
-                                            <td class="text-end">
-                                                <div class="btn-group">
-                                                    <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" 
-                                                       class="btn btn-primary btn-sm"
-                                                       title="View Data">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    {% if current_user.is_admin() %}
-                                                    <form action="{{ url_for('delete_risk_factor', id=risk_factor.id) }}" method="POST" style="display: inline;">
-                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                        <button type="submit" class="btn btn-primary btn-sm"
-                                                                title="Delete"
-                                                                onclick="return confirm('Are you sure you want to delete this risk factor?')">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <!-- Pagination -->
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <div class="ps-3 pagination-text">
-                                    Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> entries
-                                </div>
-                                <div class="btn-group pe-3">
-                                    <button type="button" class="btn btn-outline-primary" id="prevPage" disabled>Previous</button>
-                                    <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
+                    <!-- Main Content -->
+                    <div class="col-md-9">
+                        <div class="p-3 d-flex flex-column" style="height: 100%;">
+                            <!-- Search Bar -->
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Search risk factors...">
                                 </div>
                             </div>
 
-                            <!-- Add New Risk Factor Link -->
-                            <div class="text-end mt-3">
-                                <a href="{{ url_for('new_risk_factor') }}" class="add-risk-factor-link">
-                                    <i class="fas fa-plus me-1"></i>Add new risk factor
-                                </a>
+                            <!-- Table Container -->
+                            <div class="table-container flex-grow-1 d-flex flex-column">
+                                <!-- Table -->
+                                <div class="table-responsive flex-grow-1">
+                                    <table class="table table-hover mb-0" id="riskFactorsTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 70%">Name</th>
+                                                <th style="width: 15%">Asset Class</th>
+                                                <th style="width: 15%; text-align: right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for risk_factor in risk_factors %}
+                                            <tr>
+                                                <td class="text-truncate" style="max-width: 0;" title="{{ risk_factor.name }}">{{ risk_factor.name }}</td>
+                                                <td class="text-truncate" style="max-width: 0;">{{ risk_factor.asset_class }}</td>
+                                                <td class="text-end">
+                                                    <div class="btn-group">
+                                                        <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" 
+                                                           class="btn btn-primary btn-sm"
+                                                           title="View Data">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        {% if current_user.is_admin() %}
+                                                        <form action="{{ url_for('delete_risk_factor', id=risk_factor.id) }}" method="POST" style="display: inline;">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <button type="submit" class="btn btn-primary btn-sm"
+                                                                    title="Delete"
+                                                                    onclick="return confirm('Are you sure you want to delete this risk factor?')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div class="ps-3 pagination-text">
+                                        Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> entries
+                                    </div>
+                                    <div class="btn-group pe-3">
+                                        <button type="button" class="btn btn-outline-primary" id="prevPage" disabled>Previous</button>
+                                        <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -119,7 +125,6 @@
 </div>
 
 <style>
-
 
 .header-section {
     padding: 2rem 0;
@@ -141,7 +146,22 @@
     margin-bottom: 0;
 }
 
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
 
 .table {
     width: 100%;
@@ -149,11 +169,12 @@
 }
 
 .table th {
-    background-color: var(--light-bg);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border-bottom: 2px solid var(--border-color);
     font-weight: 600;
     padding: 0.2rem;
     height: 32px;
+    color: var(--text-color);
 }
 
 .table td {
@@ -206,11 +227,6 @@
     background-color: var(--light-bg);
 }
 
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
 .border-end {
     border-right: 1px solid var(--border-color) !important;
 }
@@ -255,17 +271,25 @@
     align-items: center;
 }
 
-/* Add New Risk Factor Link styles */
-.add-risk-factor-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s ease;
+/* Add styles for text truncation */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.add-risk-factor-link:hover {
-    color: var(--secondary-color);
-    text-decoration: none;
+/* Header button styling */
+.card-header .btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.card-header .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>
 
