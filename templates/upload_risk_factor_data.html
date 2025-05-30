@@ -39,17 +39,17 @@
                     <form method="POST" enctype="multipart/form-data" class="mt-4">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-4">
-                            <label for="file" class="form-label">CSV File</label>
-                            <input type="file" class="form-control mb-3" id="file" name="file" accept=".csv" required>
-                            <div class="form-text mb-3">Maximum file size: 5MB</div>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-upload me-2"></i>Upload Data
-                                </button>
-                                <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-outline-secondary">
-                                    Cancel
-                                </a>
-                            </div>
+                            <label for="csvFile" class="form-label">CSV File</label>
+                            <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required>
+                            <div class="form-text">Maximum file size: 5MB</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload Data
+                            </button>
+                            <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -57,64 +57,4 @@
         </div>
     </div>
 </div>
-
-<style>
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.alert {
-    border: none;
-    border-radius: 8px;
-}
-
-.alert-info {
-    background-color: #e8f4f8;
-    color: var(--text-color);
-}
-
-.alert-heading {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.alert ul {
-    padding-left: 1.2rem;
-}
-
-.alert ul li {
-    margin-bottom: 0.5rem;
-}
-
-.alert ul li:last-child {
-    margin-bottom: 0;
-}
-
-.form-label {
-    font-weight: 500;
-    color: var(--text-color);
-}
-
-.form-text {
-    color: var(--text-muted);
-    font-size: 0.875rem;
-}
-
-.btn-secondary {
-    background-color: var(--light-bg);
-    border-color: var(--border-color);
-    color: var(--text-color);
-}
-
-.btn-secondary:hover {
-    background-color: var(--border-color);
-    border-color: var(--border-color);
-    color: var(--text-color);
-}
-
-.gap-2 {
-    gap: 0.5rem;
-}
-</style>
 {% endblock %} 

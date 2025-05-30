@@ -1014,9 +1014,62 @@ def new_portfolio():
 @app.route('/portfolio/<int:id>')
 @login_required
 def view_portfolio(id):
+    from some_data import ASSET_CLASSES
+    
     portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    holdings = Holding.query.filter_by(portfolio_id=id).all()
-    return render_template('view_portfolio.html', portfolio=portfolio, holdings=holdings)
+    
+    # Get holdings with their fund and benchmark data
+    holdings = db.session.query(Holding).join(Fund).join(Benchmark).filter(
+        Holding.portfolio_id == id
+    ).order_by(Fund.fund_name).all()
+    
+    # Calculate amounts and prepare data
+    total_portfolio_value = 0.0
+    for holding in holdings:
+        try:
+            # Calculate amount = price * units
+            if holding.price_per_unit and holding.units:
+                holding.calculated_amount = holding.price_per_unit * holding.units
+                total_portfolio_value += holding.calculated_amount
+            else:
+                holding.calculated_amount = None
+        except (TypeError, ValueError):
+            holding.calculated_amount = None
+    
+    # Calculate weight percentages
+    for holding in holdings:
+        try:
+            if holding.calculated_amount and total_portfolio_value > 0:
+                holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
+            else:
+                holding.calculated_weight = None
+        except (TypeError, ValueError, ZeroDivisionError):
+            holding.calculated_weight = None
+    
+    # Group holdings by asset class
+    holdings_by_asset_class = {}
+    for holding in holdings:
+        asset_class = holding.fund.benchmark.asset_class
+        if asset_class not in holdings_by_asset_class:
+            holdings_by_asset_class[asset_class] = []
+        holdings_by_asset_class[asset_class].append(holding)
+    
+    # Sort the grouped holdings according to ASSET_CLASSES order
+    sorted_holdings_by_asset_class = {}
+    for asset_class in ASSET_CLASSES:
+        if asset_class in holdings_by_asset_class:
+            sorted_holdings_by_asset_class[asset_class] = holdings_by_asset_class[asset_class]
+    
+    # Add any asset classes not in ASSET_CLASSES at the end
+    for asset_class, holdings_list in holdings_by_asset_class.items():
+        if asset_class not in sorted_holdings_by_asset_class:
+            sorted_holdings_by_asset_class[asset_class] = holdings_list
+    
+    return render_template('view_portfolio.html', 
+                         portfolio=portfolio, 
+                         holdings=holdings,
+                         holdings_by_asset_class=sorted_holdings_by_asset_class,
+                         total_portfolio_value=total_portfolio_value)
 
 @app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
 @login_required

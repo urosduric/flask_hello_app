@@ -3,124 +3,289 @@
 {% block title %}{{ portfolio.portfolio_name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-            <i class="fas fa-folder-open me-2"></i>{{ portfolio.portfolio_name }}
-            {% if portfolio.is_default %}
-            <span class="badge bg-success ms-2">Default Portfolio</span>
-            {% endif %}
-        </h2>
-        <a href="{{ url_for('get_portfolios') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Portfolios
-        </a>
+<div class="container-fluid px-4">
+    <div class="header-section mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex flex-column">
+                <h2 class="main-title">
+                    <i class="fas fa-folder-open me-2"></i>{{ portfolio.portfolio_name }}
+                </h2>
+                <h4 class="subtitle">Portfolio holdings grouped by asset class</h4>
+            </div>
+        </div>
     </div>
 
+    <!-- Portfolio Summary Card -->
     <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-2 text-primary"></i>
+                <h5 class="card-title mb-0">Portfolio Details</h5>
+            </div>
+        </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-6">
-                    <h5 class="card-title">Portfolio Details</h5>
-                    <p class="card-text">
-                        <strong>Created:</strong> {{ portfolio.created_at.strftime('%Y-%m-%d') }}<br>
-                        <strong>Total Paid In:</strong> ${{ "%.2f"|format(portfolio.paid_in) }}
-                    </p>
+                <div class="col-md-4">
+                    <strong>Created:</strong> {{ portfolio.created_at.strftime('%Y-%m-%d') }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Total Paid In:</strong> €{{ "%.2f"|format(portfolio.paid_in) }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Total Holdings:</strong> {{ holdings_by_asset_class|length if holdings_by_asset_class else 0 }} asset classes
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Holdings Card -->
     <div class="card">
-        <div class="card-body">
-            <h5 class="card-title mb-4">Holdings</h5>
-            
-            {% if portfolio.holdings %}
+        <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>
+                    <h5 class="card-title mb-0">Portfolio Holdings</h5>
+                </div>
+                <a href="{{ url_for('get_funds') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Add Holdings
+                </a>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 30px 20px 20px 20px;">
+            {% if holdings_by_asset_class %}
             <div class="table-responsive">
-                <table class="table">
+                <table class="table table-hover mb-0" id="holdingsTable">
                     <thead>
                         <tr>
-                            <th>Fund Name</th>
-                            <th>Units</th>
-                            <th>Price/Unit</th>
-                            <th>Use My Price</th>
-                            <th>Strategic Weight</th>
-                            <th>Actions</th>
+                            <th style="width: 35%">Fund Name</th>
+                            <th style="width: 17%">ISIN</th>
+                            <th style="width: 14%">Units</th>
+                            <th style="width: 14%">Price</th>
+                            <th style="width: 10%"> Amount</th>
+                            <th style="width: 10%">Weight</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for holding in portfolio.holdings %}
-                        <tr>
-                            <td>{{ holding.fund.fund_name }}</td>
-                            <td>{{ "%.4f"|format(holding.units) }}</td>
-                            <td>${{ "%.2f"|format(holding.price_per_unit) }}</td>
-                            <td>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                           {% if holding.use_myprice %}checked{% endif %}
-                                           onchange="updateUseMyPrice({{ holding.id }}, this.checked)"
-                                           id="useMyPrice{{ holding.id }}">
-                                </div>
+                        {% for asset_class, holdings in holdings_by_asset_class.items() %}
+                        <!-- Asset Class Header Row -->
+                        <tr class="asset-class-header">
+                            <td colspan="6" class="asset-class-title">
+                                <strong><i class="fas fa-layer-group me-2"></i>{{ asset_class }}</strong>
+                            </td>
+                        </tr>
+                        
+                        <!-- Holdings for this Asset Class -->
+                        {% for holding in holdings %}
+                        <tr class="holding-row" data-holding-id="{{ holding.id }}">
+                            <td class="text-truncate" style="max-width: 0;">
+                                {{ holding.fund.fund_name }}
                             </td>
                             <td>
-                                <input type="number" class="form-control form-control-sm" 
-                                       value="{{ "%.2f"|format(holding.strategic_weight) }}"
-                                       min="0" max="1" step="0.01"
-                                       onchange="updateStrategicWeight({{ holding.id }}, this.value)"
-                                       style="width: 100px;">
+                                {{ holding.fund.identifier if holding.fund.identifier else '-' }}
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editHolding({{ holding.id }})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteHolding({{ holding.id }})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                {{ "%.4f"|format(holding.units) if holding.units else '0.0000' }}
+                            </td>
+                            <td class="price-cell {% if holding.use_myprice %}myprice-text{% endif %}"{% if holding.use_myprice %} title="MyPrice"{% endif %}>
+                                €{{ "%.2f"|format(holding.price_per_unit) if holding.price_per_unit else '0.00' }}
+                            </td>
+                            <td class="text-center">
+                                {% if holding.calculated_amount %}
+                                €{{ "%.f"|format(holding.calculated_amount) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if holding.calculated_weight %}
+                                {{ "%.f"|format(holding.calculated_weight) }}%
+                                {% else %}
+                                -
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
+                        {% endfor %}
+                        
+                        <!-- Sum Row -->
+                        <tr class="sum-row">
+                            <td class="sum-title">
+                                <strong><i class="fas fa-calculator me-2"></i>Sum</strong>
+                            </td>
+                            <td class="text-center text-muted">-</td>
+                            <td class="text-center text-muted">-</td>
+                            <td class="text-center text-muted">-</td>
+                            <td class="text-center">
+                                <strong>€{{ "%.f"|format(total_portfolio_value) if total_portfolio_value else '0.00' }}</strong>
+                            </td>
+                            <td class="text-center">
+                                <strong>sum here</strong>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <p class="text-muted">No holdings in this portfolio yet.</p>
+            <!-- Empty State -->
+            <div class="text-center text-muted" style="padding: 3rem 0;">
+                <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+                <h5>No Holdings Found</h5>
+                <p>This portfolio doesn't have any holdings yet.</p>
+                <a href="{{ url_for('get_funds') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add Your First Holding
+                </a>
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
 
+<style>
+/* Page-specific styling */
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.table th {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    padding: 0.25rem 0.25rem;
+    height: 22px;
+    color: var(--text-color);
+}
+
+.table td {
+    padding: 0.25rem 0.25rem;
+    vertical-align: middle;
+    height: 27px;
+}
+
+/* Asset Class Header Styling */
+.asset-class-header {
+    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+    border-top: 2px solid var(--border-color);
+}
+
+.asset-class-title {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    padding: 0.25rem 0.25rem !important;
+    font-weight: 300;
+    height: 27px;
+}
+
+/* Holdings Row Styling */
+.holding-row {
+    transition: all 0.2s ease;
+}
+
+.holding-row:hover {
+    background-color: rgba(45, 125, 237, 0.04) !important;
+    transform: scale(1.002);
+    box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
+}
+
+/* Price styling */
+.price-cell {
+    position: relative;
+}
+
+.price-cell.myprice-text {
+    cursor: pointer;
+}
+
+.myprice-text {
+    color: var(--primary-color) !important; /* Regular blue */
+    font-weight: 500;
+}
+
+/* Sum Row Styling */
+.sum-row {
+    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+    border-top: 2px solid var(--border-color);
+}
+
+.sum-title {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    padding: 0.25rem 0.25rem !important;
+    font-weight: 300;
+    height: 27px;
+}
+
+/* Tooltip styling - only for MyPrice */
+.price-cell.myprice-text:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+
+.price-cell.myprice-text:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+    margin-bottom: 1px;
+}
+</style>
+
 <script>
-function updateUseMyPrice(holdingId, value) {
-    fetch(`/holding/${holdingId}/use_myprice`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ use_myprice: value ? 1 : 0 })
-    });
-}
-
-function updateStrategicWeight(holdingId, value) {
-    fetch(`/holding/${holdingId}/strategic_weight`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ strategic_weight: parseFloat(value) })
-    });
-}
-
-function editHolding(holdingId) {
-    // To be implemented
-}
-
-function deleteHolding(holdingId) {
-    if (confirm('Are you sure you want to delete this holding?')) {
-        fetch(`/holding/${holdingId}`, {
-            method: 'DELETE',
-        }).then(() => {
-            window.location.reload();
-        });
-    }
-}
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Portfolio view loaded');
+});
 </script>
 {% endblock %} 
