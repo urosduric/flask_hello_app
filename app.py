@@ -1061,7 +1061,12 @@ def edit_portfolio(id):
 @login_required
 def delete_portfolio(id):
     portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    
+   
+       # Check if user is allowed to delete portfolio
+    if not current_user.is_admin() and portfolio.user_id != current_user.id:
+        flash('You do not have permission to delete this portfolio', 'error')
+        return redirect(url_for('get_portfolios'))
+
     # Check if this is the default portfolio
     if portfolio.is_default:
         flash('Cannot delete the default portfolio', 'error')

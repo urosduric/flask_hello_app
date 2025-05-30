@@ -18,7 +18,7 @@
                 <h5 class="card-title mb-0">Portfolio Overview</h5>
                 <div class="ms-auto">
                     <a href="{{ url_for('new_portfolio') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add portfolio
+                        <i class="fas fa-plus me-1"></i>Add New Portfolio
                     </a>
                 </div>
             </div>
@@ -27,16 +27,15 @@
             <div class="p-0">
                 <div class="d-flex flex-column" style="height: 100%;">
                     <!-- Table Container -->
-                    <div class="table-container flex-grow-1 d-flex flex-column">
+                    <div class="table-container flex-grow-1 d-flex flex-column" style="padding-bottom: 20px;">
                         <!-- Table -->
                         <div class="table-responsive">
                             <table class="table table-hover mb-0" id="portfoliosTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 8%">#</th>
-                                        <th style="width: 52%">Portfolio Name</th>
-                                        <th style="width: 20%">Date Created</th>
-                                        <th style="width: 20%; text-align: right">Actions</th>
+                                        <th style="width: 10%">#</th>
+                                        <th style="width: 65%">Portfolio Name</th>
+                                        <th style="width: 25%; text-align: right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -51,7 +50,6 @@
                                             </div>
                                         </td>
                                         <td class="text-truncate" style="max-width: 0;">{{ portfolio.portfolio_name }}</td>
-                                        <td>{{ portfolio.created_at.strftime('%b %d, %Y') if portfolio.created_at else '-' }}</td>
                                         <td class="text-end">
                                             <div class="btn-group">
                                                 <a href="{{ url_for('view_portfolio', id=portfolio.id) }}" 
@@ -63,6 +61,11 @@
                                                    class="btn btn-primary btn-sm"
                                                    title="Edit Portfolio">
                                                     <i class="fas fa-edit me-1"></i>Edit
+                                                </a>
+                                                <a href="{{ url_for('portfolio_strategy', id=portfolio.id) }}" 
+                                                   class="btn btn-primary btn-sm"
+                                                   title="Portfolio Strategy">
+                                                    <i class="fas fa-chart-line me-1"></i>Strategy
                                                 </a>
                                                 {% if not portfolio.is_default %}
                                                 <form action="{{ url_for('delete_portfolio', id=portfolio.id) }}" method="POST" style="display: inline;">
@@ -85,8 +88,8 @@
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-4">
-                                            <i class="fas fa-briefcase fa-2x mb-2"></i>
+                                        <td colspan="3" class="text-center text-muted" style="padding: 2rem 0;">
+                                            <i class="fas fa-briefcase" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
                                             <div>No portfolios found</div>
                                         </td>
                                     </tr>
@@ -102,6 +105,7 @@
 </div>
 
 <style>
+/* Page-specific styling that doesn't belong in the global cards.css */
 .header-section {
     padding: 2rem 0;
     margin-bottom: 2rem;
@@ -125,6 +129,12 @@
 .card {
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -159,15 +169,25 @@
     height: 48px;
 }
 
+/* Modern table row hover effect */
+.table-hover tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(45, 125, 237, 0.04) !important;
+    transform: scale(1.002);
+    box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
+}
+
 .btn-group {
-    gap: 0;
+    gap: 0px;
 }
 
 .btn-group .btn {
     border-radius: 0;
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 0px solid rgba(255, 255, 255, 0.6);
     padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -188,20 +208,10 @@
     border-right: none;
 }
 
+/* Portfolio-specific styling */
 .portfolio-number {
     font-weight: 500;
     color: var(--text-color);
-}
-
-.table-container {
-    min-height: auto;
-    height: fit-content;
-    overflow: visible;
-}
-
-.table-responsive {
-    height: fit-content;
-    overflow: visible;
 }
 
 /* Add styles for text truncation */
