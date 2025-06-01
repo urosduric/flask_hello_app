@@ -6,8 +6,8 @@
 <div class="container-fluid px-4">
     <div class="header-section mb-4">
         <div class="d-flex flex-column">
-            <h2 class="main-title">Portfolios</h2>
-            <h4 class="subtitle">Manage your investment portfolios</h4>
+            <h2 class="main-title">Portfolios Setup</h2>
+            <h4 class="subtitle">Manage your portfolios</h4>
         </div>
     </div>
 
@@ -57,10 +57,10 @@
                                                    title="View Portfolio">
                                                     <i class="fas fa-eye me-1"></i>View
                                                 </a>
-                                                <a href="{{ url_for('edit_portfolio', id=portfolio.id) }}" 
+                                                <a href="{{ url_for('portfolio_holdings', id=portfolio.id) }}" 
                                                    class="btn btn-primary btn-sm"
-                                                   title="Edit Portfolio">
-                                                    <i class="fas fa-edit me-1"></i>Edit
+                                                   title="Holdings">
+                                                    <i class="fas fa-list me-1"></i>Holdings
                                                 </a>
                                                 <a href="{{ url_for('portfolio_strategy', id=portfolio.id) }}" 
                                                    class="btn btn-primary btn-sm"

@@ -42,7 +42,7 @@
     }
 
     .navbar-brand {
-        font-weight: 600;
+        font-weight: 400;
         color: var(--primary-color) !important;
         font-size: 1.3rem;
         padding: 0.5rem 0;
@@ -209,7 +209,7 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('home') }}">
-                <i class="fas fa-chart-line me-2"></i>Wake Up
+                <i class="fa-solid fa-bullhorn me-2"></i> WakeUp
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -217,6 +217,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     {% if current_user.is_authenticated %}
+                
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="portfoliosDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-briefcase me-1"></i>Portfolios
@@ -224,9 +225,10 @@
                         <ul class="dropdown-menu">
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('get_portfolios') }}">
-                                    <i class="fas fa-list"></i>All Portfolios
+                                    <i class="fas fa-layer-group"></i>Total portfolio
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
                             {% for portfolio in current_user.portfolios %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('view_portfolio', id=portfolio.id) }}">
@@ -237,7 +239,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('new_portfolio') }}">
-                                    <i class="fas fa-plus"></i>New Portfolio
+                                    <i class="fas fa-sliders-h"></i>Portfolios setup
                                 </a>
                             </li>
                         </ul>
@@ -260,6 +262,17 @@
                         </ul>
                     </li>
 
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="simulationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-chart-line me-1"></i>Simulations
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="simulationsDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-random me-2"></i>Monte Carlo</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-history me-2"></i>Historical</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-project-diagram me-2"></i>Scenario Analysis</a></li>
+                        </ul>
+                    </li>
+                    
                     {% if current_user.is_admin() %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">

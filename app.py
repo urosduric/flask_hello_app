@@ -482,17 +482,17 @@ def register():
             
             # Create 3 portfolios
             default_portfolio = Portfolio(
-                portfolio_name="Default",
+                portfolio_name="Long Run Portfolio",
                 user_id=user.id,
                 is_default=1
             )
             portfolio1 = Portfolio(
-                portfolio_name="Portfolio 1",
+                portfolio_name="Emergency Fund",
                 user_id=user.id,
                 is_default=0
             )
             portfolio2 = Portfolio(
-                portfolio_name="Portfolio 2",
+                portfolio_name="Other Investments",
                 user_id=user.id,
                 is_default=0
             )
@@ -1011,7 +1011,7 @@ def new_portfolio():
     
     return render_template('new_portfolio.html')
 
-@app.route('/portfolio/<int:id>')
+@app.route('/view_portfolio/<int:id>')
 @login_required
 def view_portfolio(id):
     from some_data import ASSET_CLASSES
@@ -1019,40 +1019,86 @@ def view_portfolio(id):
     portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     
     # Get holdings with their fund and benchmark data
-    holdings = db.session.query(Holding).join(Fund).join(Benchmark).filter(
-        Holding.portfolio_id == id
-    ).order_by(Fund.fund_name).all()
+    holdings = Holding.query.filter_by(portfolio_id=id).join(Holding.fund).order_by(Fund.fund_name).all()
     
-    # Calculate amounts and prepare data
+    # Initialize dictionaries for tracking
+    asset_class_sums = {}
+    asset_class_strategic_sums = {}  # New dictionary for strategic weight sums
+    asset_class_diff_sums = {}  # New dictionary for difference sums
+    asset_class_weight_diffs = {}  # New dictionary for weight differences
+    holdings_by_asset_class = {}
     total_portfolio_value = 0.0
+    total_weight = 0.0
+    total_strategic_weight = 0.0  # New variable for total strategic weight
+    total_diff = 0.0  # New variable for total difference
+    total_weight_diff = 0.0  # New variable for total weight difference
+    
+    # First pass: Calculate amounts and group by asset class
     for holding in holdings:
         try:
+            # Get the price based on use_myprice flag
+            if not holding.use_myprice:
+                price_to_use = holding.fund.price
+            else:
+                price_to_use = holding.price_per_unit
+
             # Calculate amount = price * units
-            if holding.price_per_unit and holding.units:
-                holding.calculated_amount = holding.price_per_unit * holding.units
+            if price_to_use and holding.units:
+                holding.calculated_amount = price_to_use * holding.units
                 total_portfolio_value += holding.calculated_amount
+                
+                # Track amount by asset class
+                asset_class = holding.fund.benchmark.asset_class
+                if asset_class not in asset_class_sums:
+                    asset_class_sums[asset_class] = 0.0
+                    asset_class_strategic_sums[asset_class] = 0.0  # Initialize strategic sum
+                    asset_class_diff_sums[asset_class] = 0.0  # Initialize diff sum
+                    asset_class_weight_diffs[asset_class] = 0.0  # Initialize weight diff sum
+                asset_class_sums[asset_class] += holding.calculated_amount
+                asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100  # Add strategic weight
+                
+                # Group holdings by asset class
+                if asset_class not in holdings_by_asset_class:
+                    holdings_by_asset_class[asset_class] = []
+                holdings_by_asset_class[asset_class].append(holding)
             else:
                 holding.calculated_amount = None
         except (TypeError, ValueError):
             holding.calculated_amount = None
     
-    # Calculate weight percentages
+    # Calculate weight percentages and strategic amounts
     for holding in holdings:
         try:
             if holding.calculated_amount and total_portfolio_value > 0:
                 holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
+                total_weight += holding.calculated_weight
+                total_strategic_weight += holding.strategic_weight * 100
+                
+                # Calculate strategic amount using the final total portfolio value
+                holding.strategic_amount = (holding.strategic_weight * total_portfolio_value)
+                
+                # Calculate difference between actual and strategic amount
+                holding.diff_amount = holding.calculated_amount - holding.strategic_amount
+                total_diff += holding.diff_amount
+                
+                # Calculate difference between actual and strategic weight
+                holding.diff_weight = holding.calculated_weight - (holding.strategic_weight * 100)
+                total_weight_diff += holding.diff_weight
+                
+                # Add to asset class sums
+                asset_class = holding.fund.benchmark.asset_class
+                asset_class_diff_sums[asset_class] += holding.diff_amount
+                asset_class_weight_diffs[asset_class] += holding.diff_weight
             else:
                 holding.calculated_weight = None
+                holding.strategic_amount = None
+                holding.diff_amount = None
+                holding.diff_weight = None
         except (TypeError, ValueError, ZeroDivisionError):
             holding.calculated_weight = None
-    
-    # Group holdings by asset class
-    holdings_by_asset_class = {}
-    for holding in holdings:
-        asset_class = holding.fund.benchmark.asset_class
-        if asset_class not in holdings_by_asset_class:
-            holdings_by_asset_class[asset_class] = []
-        holdings_by_asset_class[asset_class].append(holding)
+            holding.strategic_amount = None
+            holding.diff_amount = None
+            holding.diff_weight = None
     
     # Sort the grouped holdings according to ASSET_CLASSES order
     sorted_holdings_by_asset_class = {}
@@ -1065,11 +1111,166 @@ def view_portfolio(id):
         if asset_class not in sorted_holdings_by_asset_class:
             sorted_holdings_by_asset_class[asset_class] = holdings_list
     
+    # Calculate max absolute difference for bar scaling
+    max_positive_holding_diff = max(
+        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount > 0),
+        default=0
+    )
+    
+    max_negative_holding_diff = abs(min(
+        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount < 0),
+        default=0
+    ))
+    
+    max_asset_class_diff = max(
+        (abs(d) for d in asset_class_diff_sums.values()),
+        default=0
+    )
+    
     return render_template('view_portfolio.html', 
                          portfolio=portfolio, 
                          holdings=holdings,
                          holdings_by_asset_class=sorted_holdings_by_asset_class,
-                         total_portfolio_value=total_portfolio_value)
+                         asset_class_sums=asset_class_sums,
+                         asset_class_strategic_sums=asset_class_strategic_sums,
+                         asset_class_diff_sums=asset_class_diff_sums,
+                         asset_class_weight_diffs=asset_class_weight_diffs,
+                         total_portfolio_value=total_portfolio_value,
+                         total_weight=total_weight,
+                         total_strategic_weight=total_strategic_weight,
+                         total_diff=total_diff,
+                         total_weight_diff=total_weight_diff,
+                         max_positive_holding_diff=max_positive_holding_diff,
+                         max_negative_holding_diff=max_negative_holding_diff,
+                         max_asset_class_diff=max_asset_class_diff)
+
+
+
+@app.route('/portfolio_holdings/<int:id>')
+@login_required
+def portfolio_holdings(id):
+
+    from some_data import ASSET_CLASSES
+    
+    portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
+    # Get holdings with their fund and benchmark data
+    holdings = Holding.query.filter_by(portfolio_id=id).join(Holding.fund).order_by(Fund.fund_name).all()
+    
+    # Initialize dictionaries for tracking
+    asset_class_sums = {}
+    asset_class_strategic_sums = {}  # New dictionary for strategic weight sums
+    asset_class_diff_sums = {}  # New dictionary for difference sums
+    asset_class_weight_diffs = {}  # New dictionary for weight differences
+    holdings_by_asset_class = {}
+    total_portfolio_value = 0.0
+    total_weight = 0.0
+    total_strategic_weight = 0.0  # New variable for total strategic weight
+    total_diff = 0.0  # New variable for total difference
+    total_weight_diff = 0.0  # New variable for total weight difference
+    
+    # First pass: Calculate amounts and group by asset class
+    for holding in holdings:
+        try:
+            # Get the price based on use_myprice flag
+            if not holding.use_myprice:
+                price_to_use = holding.fund.price
+            else:
+                price_to_use = holding.price_per_unit
+
+            # Calculate amount = price * units
+            if price_to_use and holding.units:
+                holding.calculated_amount = price_to_use * holding.units
+                total_portfolio_value += holding.calculated_amount
+                
+                # Track amount by asset class
+                asset_class = holding.fund.benchmark.asset_class
+                if asset_class not in asset_class_sums:
+                    asset_class_sums[asset_class] = 0.0
+                    asset_class_strategic_sums[asset_class] = 0.0  # Initialize strategic sum
+                    asset_class_diff_sums[asset_class] = 0.0  # Initialize diff sum
+                    asset_class_weight_diffs[asset_class] = 0.0  # Initialize weight diff sum
+                asset_class_sums[asset_class] += holding.calculated_amount
+                asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100  # Add strategic weight
+                
+                # Group holdings by asset class
+                if asset_class not in holdings_by_asset_class:
+                    holdings_by_asset_class[asset_class] = []
+                holdings_by_asset_class[asset_class].append(holding)
+            else:
+                holding.calculated_amount = None
+        except (TypeError, ValueError):
+            holding.calculated_amount = None
+    
+    # Calculate weight percentages and strategic amounts
+    for holding in holdings:
+        try:
+            if holding.calculated_amount and total_portfolio_value > 0:
+                holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
+                total_weight += holding.calculated_weight
+                total_strategic_weight += holding.strategic_weight * 100
+                
+                # Calculate strategic amount using the final total portfolio value
+                holding.strategic_amount = (holding.strategic_weight * total_portfolio_value)
+                
+                # Calculate difference between actual and strategic amount
+                holding.diff_amount = holding.calculated_amount - holding.strategic_amount
+                total_diff += holding.diff_amount
+                
+                # Calculate difference between actual and strategic weight
+                holding.diff_weight = holding.calculated_weight - (holding.strategic_weight * 100)
+                total_weight_diff += holding.diff_weight
+                
+                # Add to asset class sums
+                asset_class = holding.fund.benchmark.asset_class
+                asset_class_diff_sums[asset_class] += holding.diff_amount
+                asset_class_weight_diffs[asset_class] += holding.diff_weight
+            else:
+                holding.calculated_weight = None
+                holding.strategic_amount = None
+                holding.diff_amount = None
+                holding.diff_weight = None
+        except (TypeError, ValueError, ZeroDivisionError):
+            holding.calculated_weight = None
+            holding.strategic_amount = None
+            holding.diff_amount = None
+            holding.diff_weight = None
+    
+    # Sort the grouped holdings according to ASSET_CLASSES order
+    sorted_holdings_by_asset_class = {}
+    for asset_class in ASSET_CLASSES:
+        if asset_class in holdings_by_asset_class:
+            sorted_holdings_by_asset_class[asset_class] = holdings_by_asset_class[asset_class]
+    
+    # Add any asset classes not in ASSET_CLASSES at the end
+    for asset_class, holdings_list in holdings_by_asset_class.items():
+        if asset_class not in sorted_holdings_by_asset_class:
+            sorted_holdings_by_asset_class[asset_class] = holdings_list
+    
+    # Calculate max absolute difference for bar scaling
+    max_positive_holding_diff = max(
+        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount > 0),
+        default=0
+    )
+    
+    max_negative_holding_diff = abs(min(
+        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount < 0),
+        default=0
+    ))
+    
+    max_asset_class_diff = max(
+        (abs(d) for d in asset_class_diff_sums.values()),
+        default=0
+    )
+    
+    return render_template('portfolio_holdings_view.html', 
+                         portfolio=portfolio, 
+                         holdings=holdings,
+                         holdings_by_asset_class=sorted_holdings_by_asset_class,
+                         asset_class_sums=asset_class_sums,
+                         total_portfolio_value=total_portfolio_value,
+                         total_weight=total_weight,
+                         total_strategic_weight=total_strategic_weight)
 
 @app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -1149,12 +1350,138 @@ def delete_portfolio(id):
         flash(f'An error occurred while deleting the portfolio: {str(e)}', 'error')
         return redirect(url_for('get_portfolios'))
 
-@app.route('/portfolio/<int:id>/strategy')
+@app.route('/portfolio_strategy/<int:id>')
 @login_required
 def portfolio_strategy(id):
+    from some_data import ASSET_CLASSES
+    
     portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    holdings = Holding.query.filter_by(portfolio_id=id).join(Fund).all()
-    return render_template('portfolio_strategy.html', portfolio=portfolio, holdings=holdings)
+    
+    # Get holdings with their fund and benchmark data
+    holdings = Holding.query.filter_by(portfolio_id=id).join(Holding.fund).order_by(Fund.fund_name).all()
+    
+    # Initialize dictionaries for tracking
+    asset_class_sums = {}
+    asset_class_strategic_sums = {}  # New dictionary for strategic weight sums
+    asset_class_diff_sums = {}  # New dictionary for difference sums
+    asset_class_weight_diffs = {}  # New dictionary for weight differences
+    holdings_by_asset_class = {}
+    total_portfolio_value = 0.0
+    total_weight = 0.0
+    total_strategic_weight = 0.0  # New variable for total strategic weight
+    total_diff = 0.0  # New variable for total difference
+    total_weight_diff = 0.0  # New variable for total weight difference
+    
+    # First pass: Calculate amounts and group by asset class
+    for holding in holdings:
+        try:
+            # Get the price based on use_myprice flag
+            if not holding.use_myprice:
+                price_to_use = holding.fund.price
+            else:
+                price_to_use = holding.price_per_unit
+
+            # Calculate amount = price * units
+            if price_to_use and holding.units:
+                holding.calculated_amount = price_to_use * holding.units
+                total_portfolio_value += holding.calculated_amount
+                
+                # Track amount by asset class
+                asset_class = holding.fund.benchmark.asset_class
+                if asset_class not in asset_class_sums:
+                    asset_class_sums[asset_class] = 0.0
+                    asset_class_strategic_sums[asset_class] = 0.0  # Initialize strategic sum
+                    asset_class_diff_sums[asset_class] = 0.0  # Initialize diff sum
+                    asset_class_weight_diffs[asset_class] = 0.0  # Initialize weight diff sum
+                asset_class_sums[asset_class] += holding.calculated_amount
+                asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100  # Add strategic weight
+                
+                # Group holdings by asset class
+                if asset_class not in holdings_by_asset_class:
+                    holdings_by_asset_class[asset_class] = []
+                holdings_by_asset_class[asset_class].append(holding)
+            else:
+                holding.calculated_amount = None
+        except (TypeError, ValueError):
+            holding.calculated_amount = None
+    
+    # Calculate weight percentages and strategic amounts
+    for holding in holdings:
+        try:
+            if holding.calculated_amount and total_portfolio_value > 0:
+                holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
+                total_weight += holding.calculated_weight
+                total_strategic_weight += holding.strategic_weight * 100
+                
+                # Calculate strategic amount using the final total portfolio value
+                holding.strategic_amount = (holding.strategic_weight * total_portfolio_value)
+                
+                # Calculate difference between actual and strategic amount
+                holding.diff_amount = holding.calculated_amount - holding.strategic_amount
+                total_diff += holding.diff_amount
+                
+                # Calculate difference between actual and strategic weight
+                holding.diff_weight = holding.calculated_weight - (holding.strategic_weight * 100)
+                total_weight_diff += holding.diff_weight
+                
+                # Add to asset class sums
+                asset_class = holding.fund.benchmark.asset_class
+                asset_class_diff_sums[asset_class] += holding.diff_amount
+                asset_class_weight_diffs[asset_class] += holding.diff_weight
+            else:
+                holding.calculated_weight = None
+                holding.strategic_amount = None
+                holding.diff_amount = None
+                holding.diff_weight = None
+        except (TypeError, ValueError, ZeroDivisionError):
+            holding.calculated_weight = None
+            holding.strategic_amount = None
+            holding.diff_amount = None
+            holding.diff_weight = None
+    
+    # Sort the grouped holdings according to ASSET_CLASSES order
+    sorted_holdings_by_asset_class = {}
+    for asset_class in ASSET_CLASSES:
+        if asset_class in holdings_by_asset_class:
+            sorted_holdings_by_asset_class[asset_class] = holdings_by_asset_class[asset_class]
+    
+    # Add any asset classes not in ASSET_CLASSES at the end
+    for asset_class, holdings_list in holdings_by_asset_class.items():
+        if asset_class not in sorted_holdings_by_asset_class:
+            sorted_holdings_by_asset_class[asset_class] = holdings_list
+    
+    # Calculate max absolute difference for bar scaling
+    max_positive_holding_diff = max(
+        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount > 0),
+        default=0
+    )
+    
+    max_negative_holding_diff = abs(min(
+        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount < 0),
+        default=0
+    ))
+    
+    max_asset_class_diff = max(
+        (abs(d) for d in asset_class_diff_sums.values()),
+        default=0
+    )
+    
+    return render_template('portfolio_strategy.html', 
+                         portfolio=portfolio, 
+                         holdings=holdings,
+                         holdings_by_asset_class=sorted_holdings_by_asset_class,
+                         asset_class_sums=asset_class_sums,
+                         asset_class_strategic_sums=asset_class_strategic_sums,
+                         asset_class_diff_sums=asset_class_diff_sums,
+                         asset_class_weight_diffs=asset_class_weight_diffs,
+                         total_portfolio_value=total_portfolio_value,
+                         total_weight=total_weight,
+                         total_strategic_weight=total_strategic_weight,
+                         total_diff=total_diff,
+                         total_weight_diff=total_weight_diff,
+                         max_positive_holding_diff=max_positive_holding_diff,
+                         max_negative_holding_diff=max_negative_holding_diff,
+                         max_asset_class_diff=max_asset_class_diff)
 
 # Holding routes
 @app.route('/add_fund_to_portfolio/<int:fund_id>', methods=['POST'])

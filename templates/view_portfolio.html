@@ -8,32 +8,9 @@
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex flex-column">
                 <h2 class="main-title">
-                    <i class="fas fa-folder-open me-2"></i>{{ portfolio.portfolio_name }}
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>{{ portfolio.portfolio_name }}
                 </h2>
-                <h4 class="subtitle">Portfolio holdings grouped by asset class</h4>
-            </div>
-        </div>
-    </div>
-
-    <!-- Portfolio Summary Card -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-info-circle me-2 text-primary"></i>
-                <h5 class="card-title mb-0">Portfolio Details</h5>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <strong>Created:</strong> {{ portfolio.created_at.strftime('%Y-%m-%d') }}
-                </div>
-                <div class="col-md-4">
-                    <strong>Total Paid In:</strong> €{{ "%.2f"|format(portfolio.paid_in) }}
-                </div>
-                <div class="col-md-4">
-                    <strong>Total Holdings:</strong> {{ holdings_by_asset_class|length if holdings_by_asset_class else 0 }} asset classes
-                </div>
+                <h4 class="subtitle">Main portfolio page</h4>
             </div>
         </div>
     </div>
@@ -57,48 +34,98 @@
                 <table class="table table-hover mb-0" id="holdingsTable">
                     <thead>
                         <tr>
-                            <th style="width: 35%">Fund Name</th>
-                            <th style="width: 17%">ISIN</th>
-                            <th style="width: 14%">Units</th>
-                            <th style="width: 14%">Price</th>
-                            <th style="width: 10%"> Amount</th>
-                            <th style="width: 10%">Weight</th>
+                            <th style="width: 40%" class="text-start"></th>
+                            <th colspan="3" class="text-center">Amount</th>
+                            <th colspan="3" class="text-center">Weight</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 40%" class="text-start">Fund Name</th>
+                            <th style="width: 10%" class="text-end">Portfolio</th>
+                            <th style="width: 10%" class="text-end">Strategic</th>
+                            <th style="width: 10%" class="text-end">Diff.</th>
+                            <th style="width: 10%" class="text-end">Portfolio</th>
+                            <th style="width: 10%" class="text-end">Strategic</th>
+                            <th style="width: 10%" class="text-end">Diff.</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for asset_class, holdings in holdings_by_asset_class.items() %}
                         <!-- Asset Class Header Row -->
                         <tr class="asset-class-header">
-                            <td colspan="6" class="asset-class-title">
+                            <td class="asset-class-title">
                                 <strong><i class="fas fa-layer-group me-2"></i>{{ asset_class }}</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>€{{ "%.f"|format(asset_class_sums[asset_class]) if asset_class in asset_class_sums else '0.00' }}</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>€{{ "%.f"|format(asset_class_strategic_sums[asset_class] * total_portfolio_value / 100) if asset_class in asset_class_strategic_sums else '0.00' }}</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                {% if asset_class in asset_class_diff_sums %}
+                                <span class="diff-value {{ 'text-success' if asset_class_diff_sums[asset_class] > 0 else 'text-danger' }}">
+                                    €{{ "%.f"|format(asset_class_diff_sums[asset_class]) }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>{{ "%.f"|format((asset_class_sums[asset_class] / total_portfolio_value * 100) if total_portfolio_value > 0 and asset_class in asset_class_sums else 0) }}%</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>{{ "%.f"|format(asset_class_strategic_sums[asset_class]) if asset_class in asset_class_strategic_sums else '0.00' }}%</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <span class="diff-value {{ 'text-success' if asset_class_weight_diffs[asset_class] > 0 else 'text-danger' }}">
+                                    {{ "%.f"|format(asset_class_weight_diffs[asset_class]) if asset_class in asset_class_weight_diffs else '0.00' }}%
+                                </span>
                             </td>
                         </tr>
                         
                         <!-- Holdings for this Asset Class -->
                         {% for holding in holdings %}
                         <tr class="holding-row" data-holding-id="{{ holding.id }}">
-                            <td class="text-truncate" style="max-width: 0;">
+                            <td class="text-truncate text-start fund-name-cell" style="max-width: 0; cursor: pointer;" 
+                                onclick="showLongName(this, '{{ holding.fund.long_name }}')">
                                 {{ holding.fund.fund_name }}
                             </td>
-                            <td>
-                                {{ holding.fund.identifier if holding.fund.identifier else '-' }}
-                            </td>
-                            <td>
-                                {{ "%.4f"|format(holding.units) if holding.units else '0.0000' }}
-                            </td>
-                            <td class="price-cell {% if holding.use_myprice %}myprice-text{% endif %}"{% if holding.use_myprice %} title="MyPrice"{% endif %}>
-                                €{{ "%.2f"|format(holding.price_per_unit) if holding.price_per_unit else '0.00' }}
-                            </td>
-                            <td class="text-center">
+                            <td class="text-end">
                                 {% if holding.calculated_amount %}
                                 €{{ "%.f"|format(holding.calculated_amount) }}
                                 {% else %}
                                 -
                                 {% endif %}
                             </td>
-                            <td class="text-center">
+                            <td class="text-end">
+                                {% if holding.strategic_amount %}
+                                €{{ "%.f"|format(holding.strategic_amount) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if holding.diff_amount is not none %}
+                                €{{ "%.f"|format(holding.diff_amount) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
                                 {% if holding.calculated_weight %}
                                 {{ "%.f"|format(holding.calculated_weight) }}%
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if holding.strategic_weight %}
+                                {{ "%.f"|format(holding.strategic_weight * 100) }}%
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if holding.diff_weight is not none %}
+                                {{ "%.f"|format(holding.diff_weight) }}%
                                 {% else %}
                                 -
                                 {% endif %}
@@ -109,17 +136,32 @@
                         
                         <!-- Sum Row -->
                         <tr class="sum-row">
-                            <td class="sum-title">
+                            <td class="asset-class-title">
                                 <strong><i class="fas fa-calculator me-2"></i>Sum</strong>
                             </td>
-                            <td class="text-center text-muted">-</td>
-                            <td class="text-center text-muted">-</td>
-                            <td class="text-center text-muted">-</td>
-                            <td class="text-center">
+                            <td class="asset-class-title text-end">
                                 <strong>€{{ "%.f"|format(total_portfolio_value) if total_portfolio_value else '0.00' }}</strong>
                             </td>
-                            <td class="text-center">
-                                <strong>sum here</strong>
+                            <td class="asset-class-title text-end">
+                                <strong>€{{ "%.f"|format(total_strategic_weight * total_portfolio_value / 100) if total_strategic_weight else '0.00' }}</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                {% if total_diff is not none %}
+                                <span class="diff-value {{ 'text-success' if total_diff > 0 else 'text-danger' }}">
+                                    €{{ "%.f"|format(total_diff) }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>{{ "%.f"|format(total_weight) if total_weight else '0.00' }}%</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>{{ "%.f"|format(total_strategic_weight) if total_strategic_weight else '0.00' }}%</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <span class="diff-value {{ 'text-success' if total_weight_diff > 0 else 'text-danger' }}">
+                                    {{ "%.f"|format(total_weight_diff) if total_weight_diff is not none else '0.00' }}%
+                                </span>
                             </td>
                         </tr>
                     </tbody>
@@ -198,6 +240,7 @@
     padding: 0.25rem 0.25rem;
     vertical-align: middle;
     height: 27px;
+    font-size: 0.9rem;
 }
 
 /* Asset Class Header Styling */
@@ -235,7 +278,7 @@
 }
 
 .myprice-text {
-    color: var(--primary-color) !important; /* Regular blue */
+    color: var(--primary-color) !important;
     font-weight: 500;
 }
 
@@ -253,39 +296,77 @@
     height: 27px;
 }
 
-/* Tooltip styling - only for MyPrice */
-.price-cell.myprice-text:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    margin-bottom: 5px;
+/* Fund name cell styling */
+.fund-name-cell {
+    cursor: pointer;
+    transition: color 0.2s ease;
 }
 
-.price-cell.myprice-text:hover::before {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: #333;
-    z-index: 1000;
-    margin-bottom: 1px;
+.fund-name-cell:hover {
+    color: #000 !important;
+    font-weight: 500;
+}
+
+/* Difference bar styling */
+.diff-bar-container,
+.diff-bar,
+.holding-bar {
+    display: none;
+}
+
+.diff-value {
+    font-weight: 500;
+}
+
+.asset-class-header .diff-value,
+.sum-row .diff-value {
+    font-weight: 500;
+}
+
+.asset-class-header .diff-value.text-success,
+.sum-row .diff-value.text-success {
+    color: #28a745 !important;
+}
+
+.asset-class-header .diff-value.text-danger,
+.sum-row .diff-value.text-danger {
+    color: #dc3545 !important;
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Portfolio view loaded');
+    
+    // Initialize all tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Function to show long name tooltip
+    window.showLongName = function(element, longName) {
+        // Remove any existing tooltip
+        const existingTooltip = bootstrap.Tooltip.getInstance(element);
+        if (existingTooltip) {
+            existingTooltip.dispose();
+        }
+        
+        // Create new tooltip
+        const tooltip = new bootstrap.Tooltip(element, {
+            title: longName,
+            placement: 'top',
+            trigger: 'manual'
+        });
+        
+        // Show tooltip
+        tooltip.show();
+        
+        // Hide tooltip after 3 seconds
+        setTimeout(() => {
+            tooltip.hide();
+        }, 3000);
+    };
 });
 </script>
 {% endblock %} 
