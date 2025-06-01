@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}{{ portfolio.portfolio_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="header-section mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex flex-column">
+                <h2 class="main-title">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>{{ portfolio.portfolio_name }}
+                </h2>
+                <h4 class="subtitle">Portfolio holdings</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holdings Card -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>
+                    <h5 class="card-title mb-0">Portfolio Holdings</h5>
+                </div>
+                <a href="{{ url_for('get_funds') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Add Holdings
+                </a>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 30px 20px 20px 20px;">
+            {% if holdings_by_asset_class %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="holdingsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%" class="text-start">Fund Name</th>
+                            <th style="width: 15%" class="text-end">ISIN</th>
+                            <th style="width: 10%" class="text-end">Units</th>
+                            <th style="width: 10%" class="text-end">Price</th>
+                            <th style="width: 15%" class="text-end">Amount</th>
+                            <th style="width: 10%" class="text-end">Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset_class, holdings in holdings_by_asset_class.items() %}
+                        <!-- Asset Class Header Row -->
+                        <tr class="asset-class-header">
+                            <td colspan="4" class="asset-class-title">
+                                <strong><i class="fas fa-layer-group me-2"></i>{{ asset_class }}</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>€{{ "%.f"|format(asset_class_sums[asset_class]) if asset_class in asset_class_sums else '0.00' }}</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>{{ "%.f"|format((asset_class_sums[asset_class] / total_portfolio_value * 100) if total_portfolio_value > 0 and asset_class in asset_class_sums else 0) }}%</strong>
+                            </td>
+                        </tr>
+                        
+                        <!-- Holdings for this Asset Class -->
+                        {% for holding in holdings %}
+                        <tr class="holding-row" data-holding-id="{{ holding.id }}">
+                            <td class="text-truncate text-start fund-name-cell" style="max-width: 0; cursor: pointer;" 
+                                onclick="showLongName(this, '{{ holding.fund.long_name }}')">
+                                {{ holding.fund.fund_name }}
+                            </td>
+                            <td class="text-end">
+                                {{ holding.fund.identifier if holding.fund.identifier else '-' }}
+                            </td>
+                            <td class="text-end">
+                                {{ "%.1f"|format(holding.units) if holding.units else '0.0000' }}
+                            </td>
+                            <td class="price-cell {% if holding.use_myprice %}myprice-text{% endif %} text-end"{% if holding.use_myprice %} title="MyPrice"{% endif %}>
+                                {% if holding.use_myprice %}
+                                    €{{ "%.1f"|format(holding.price_per_unit) if holding.price_per_unit else '0.00' }}
+                                {% else %}
+                                    €{{ "%.1f"|format(holding.fund.price) if holding.fund.price else '0.00' }}
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if holding.calculated_amount %}
+                                €{{ "%.f"|format(holding.calculated_amount) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if holding.calculated_weight %}
+                                {{ "%.f"|format(holding.calculated_weight) }}%
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                        
+                        <!-- Sum Row -->
+                        <tr class="sum-row">
+                            <td class="asset-class-title">
+                                <strong><i class="fas fa-calculator me-2"></i>Sum</strong>
+                            </td>
+                            <td class="text-end text-muted">-</td>
+                            <td class="text-end text-muted">-</td>
+                            <td class="text-end text-muted">-</td>
+                            <td class="asset-class-title text-end">
+                                <strong>€{{ "%.f"|format(total_portfolio_value) if total_portfolio_value else '0.00' }}</strong>
+                            </td>
+                            <td class="asset-class-title text-end">
+                                <strong>{{ "%.f"|format(total_weight) if total_weight else '0.00' }}%</strong>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center text-muted" style="padding: 3rem 0;">
+                <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+                <h5>No Holdings Found</h5>
+                <p>This portfolio doesn't have any holdings yet.</p>
+                <a href="{{ url_for('get_funds') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add Your First Holding
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page-specific styling */
+.header-section {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+.card {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.table th {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    padding: 0.25rem 0.25rem;
+    height: 22px;
+    color: var(--text-color);
+}
+
+.table td {
+    padding: 0.25rem 0.25rem;
+    vertical-align: middle;
+    height: 27px;
+    font-size: 0.9rem;
+
+}
+
+/* Asset Class Header Styling */
+.asset-class-header {
+    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+    border-top: 2px solid var(--border-color);
+}
+
+.asset-class-title {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    padding: 0.25rem 0.25rem !important;
+    font-weight: 300;
+    height: 27px;
+}
+
+/* Holdings Row Styling */
+.holding-row {
+    transition: all 0.2s ease;
+}
+
+.holding-row:hover {
+    background-color: rgba(45, 125, 237, 0.04) !important;
+    transform: scale(1.002);
+    box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
+}
+
+/* Price styling */
+.price-cell {
+    position: relative;
+}
+
+.price-cell.myprice-text {
+    cursor: pointer;
+}
+
+.myprice-text {
+    color: var(--primary-color) !important; /* Regular blue */
+    font-weight: 500;
+}
+
+/* Sum Row Styling */
+.sum-row {
+    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+    border-top: 2px solid var(--border-color);
+}
+
+.sum-title {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    padding: 0.25rem 0.25rem !important;
+    font-weight: 300;
+    height: 27px;
+}
+
+/* Fund name cell styling */
+.fund-name-cell {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.fund-name-cell:hover {
+    color: #000 !important;
+    font-weight: 500;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Portfolio view loaded');
+    
+    // Function to show long name tooltip
+    window.showLongName = function(element, longName) {
+        // Remove any existing tooltip
+        const existingTooltip = bootstrap.Tooltip.getInstance(element);
+        if (existingTooltip) {
+            existingTooltip.dispose();
+        }
+        
+        // Create new tooltip
+        const tooltip = new bootstrap.Tooltip(element, {
+            title: longName,
+            placement: 'top',
+            trigger: 'manual'
+        });
+        
+        // Show tooltip
+        tooltip.show();
+        
+        // Hide tooltip after 3 seconds
+        setTimeout(() => {
+            tooltip.hide();
+        }, 3000);
+    };
+});
+</script>
+{% endblock %} 
