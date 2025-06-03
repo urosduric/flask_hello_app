@@ -1145,133 +1145,6 @@ def view_portfolio(id):
                          max_asset_class_diff=max_asset_class_diff)
 
 
-
-@app.route('/portfolio_holdings/<int:id>')
-@login_required
-def portfolio_holdings(id):
-
-    from some_data import ASSET_CLASSES
-    
-    portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    
-    # Get holdings with their fund and benchmark data
-    holdings = Holding.query.filter_by(portfolio_id=id).join(Holding.fund).order_by(Fund.fund_name).all()
-    
-    # Initialize dictionaries for tracking
-    asset_class_sums = {}
-    asset_class_strategic_sums = {}  # New dictionary for strategic weight sums
-    asset_class_diff_sums = {}  # New dictionary for difference sums
-    asset_class_weight_diffs = {}  # New dictionary for weight differences
-    holdings_by_asset_class = {}
-    total_portfolio_value = 0.0
-    total_weight = 0.0
-    total_strategic_weight = 0.0  # New variable for total strategic weight
-    total_diff = 0.0  # New variable for total difference
-    total_weight_diff = 0.0  # New variable for total weight difference
-    
-    # First pass: Calculate amounts and group by asset class
-    for holding in holdings:
-        try:
-            # Get the price based on use_myprice flag
-            if not holding.use_myprice:
-                price_to_use = holding.fund.price
-            else:
-                price_to_use = holding.price_per_unit
-
-            # Calculate amount = price * units
-            if price_to_use and holding.units:
-                holding.calculated_amount = price_to_use * holding.units
-                total_portfolio_value += holding.calculated_amount
-                
-                # Track amount by asset class
-                asset_class = holding.fund.benchmark.asset_class
-                if asset_class not in asset_class_sums:
-                    asset_class_sums[asset_class] = 0.0
-                    asset_class_strategic_sums[asset_class] = 0.0  # Initialize strategic sum
-                    asset_class_diff_sums[asset_class] = 0.0  # Initialize diff sum
-                    asset_class_weight_diffs[asset_class] = 0.0  # Initialize weight diff sum
-                asset_class_sums[asset_class] += holding.calculated_amount
-                asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100  # Add strategic weight
-                
-                # Group holdings by asset class
-                if asset_class not in holdings_by_asset_class:
-                    holdings_by_asset_class[asset_class] = []
-                holdings_by_asset_class[asset_class].append(holding)
-            else:
-                holding.calculated_amount = None
-        except (TypeError, ValueError):
-            holding.calculated_amount = None
-    
-    # Calculate weight percentages and strategic amounts
-    for holding in holdings:
-        try:
-            if holding.calculated_amount and total_portfolio_value > 0:
-                holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
-                total_weight += holding.calculated_weight
-                total_strategic_weight += holding.strategic_weight * 100
-                
-                # Calculate strategic amount using the final total portfolio value
-                holding.strategic_amount = (holding.strategic_weight * total_portfolio_value)
-                
-                # Calculate difference between actual and strategic amount
-                holding.diff_amount = holding.calculated_amount - holding.strategic_amount
-                total_diff += holding.diff_amount
-                
-                # Calculate difference between actual and strategic weight
-                holding.diff_weight = holding.calculated_weight - (holding.strategic_weight * 100)
-                total_weight_diff += holding.diff_weight
-                
-                # Add to asset class sums
-                asset_class = holding.fund.benchmark.asset_class
-                asset_class_diff_sums[asset_class] += holding.diff_amount
-                asset_class_weight_diffs[asset_class] += holding.diff_weight
-            else:
-                holding.calculated_weight = None
-                holding.strategic_amount = None
-                holding.diff_amount = None
-                holding.diff_weight = None
-        except (TypeError, ValueError, ZeroDivisionError):
-            holding.calculated_weight = None
-            holding.strategic_amount = None
-            holding.diff_amount = None
-            holding.diff_weight = None
-    
-    # Sort the grouped holdings according to ASSET_CLASSES order
-    sorted_holdings_by_asset_class = {}
-    for asset_class in ASSET_CLASSES:
-        if asset_class in holdings_by_asset_class:
-            sorted_holdings_by_asset_class[asset_class] = holdings_by_asset_class[asset_class]
-    
-    # Add any asset classes not in ASSET_CLASSES at the end
-    for asset_class, holdings_list in holdings_by_asset_class.items():
-        if asset_class not in sorted_holdings_by_asset_class:
-            sorted_holdings_by_asset_class[asset_class] = holdings_list
-    
-    # Calculate max absolute difference for bar scaling
-    max_positive_holding_diff = max(
-        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount > 0),
-        default=0
-    )
-    
-    max_negative_holding_diff = abs(min(
-        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount < 0),
-        default=0
-    ))
-    
-    max_asset_class_diff = max(
-        (abs(d) for d in asset_class_diff_sums.values()),
-        default=0
-    )
-    
-    return render_template('portfolio_holdings_view.html', 
-                         portfolio=portfolio, 
-                         holdings=holdings,
-                         holdings_by_asset_class=sorted_holdings_by_asset_class,
-                         asset_class_sums=asset_class_sums,
-                         total_portfolio_value=total_portfolio_value,
-                         total_weight=total_weight,
-                         total_strategic_weight=total_strategic_weight)
-
 @app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_portfolio(id):
@@ -1483,104 +1356,309 @@ def portfolio_strategy(id):
                          max_negative_holding_diff=max_negative_holding_diff,
                          max_asset_class_diff=max_asset_class_diff)
 
+
+
+@app.route('/portfolio_holdings/<int:id>', methods=['GET', 'POST'])
+@login_required
+def portfolio_holdings(id):
+    try:
+        from some_data import ASSET_CLASSES
+        
+        # Check if portfolio exists
+        portfolio = Portfolio.query.filter_by(id=id).first()
+        if not portfolio:
+            flash('Portfolio not found', 'error')
+            return redirect(url_for('get_portfolios'))
+        
+        # Check if user has permission to view this portfolio
+        if portfolio.user_id != current_user.id:
+            flash('You do not have permission to view this portfolio', 'error')
+            return redirect(url_for('get_portfolios'))
+            
+        # Handle POST requests
+        if request.method == 'POST':
+            holding_id = request.form.get('holding_id')
+            if not holding_id:
+                flash('Invalid request', 'error')
+                return redirect(url_for('portfolio_holdings', id=id))
+                
+            holding = Holding.query.filter_by(id=holding_id, user_id=current_user.id).first()
+            if not holding:
+                flash('Holding not found', 'error')
+                return redirect(url_for('portfolio_holdings', id=id))
+            
+            # Handle different actions
+            action = request.form.get('action')
+            
+            if action == 'update_units':
+                try:
+                    units = float(request.form.get('units', 0))
+                    if units < 0:
+                        raise ValueError("Units cannot be negative")
+                    holding.units = units
+                    db.session.commit()
+                    flash('Units updated successfully', 'success')
+                except ValueError as e:
+                    flash(f'Invalid units value: {str(e)}', 'error')
+                    return redirect(url_for('portfolio_holdings', id=id))
+                    
+            elif action == 'update_myprice':
+                try:
+                    myprice = float(request.form.get('myprice', 0))
+                    if myprice < 0:
+                        raise ValueError("Price cannot be negative")
+                    holding.price_per_unit = myprice
+                    db.session.commit()
+                    flash('MyPrice updated successfully', 'success')
+                except ValueError as e:
+                    flash(f'Invalid price value: {str(e)}', 'error')
+                    return redirect(url_for('portfolio_holdings', id=id))
+                    
+            elif action == 'toggle_myprice':
+                holding.use_myprice = 1 if holding.use_myprice == 0 else 0
+                db.session.commit()
+                flash('Price source updated successfully', 'success')
+                
+            return redirect(url_for('portfolio_holdings', id=id))
+        
+        # Get holdings with their fund and benchmark data
+        holdings = Holding.query.filter_by(portfolio_id=id).join(Holding.fund).order_by(Fund.fund_name).all()
+        
+        # Initialize dictionaries for tracking
+        asset_class_sums = {}
+        asset_class_strategic_sums = {}
+        asset_class_diff_sums = {}
+        asset_class_weight_diffs = {}
+        holdings_by_asset_class = {}
+        total_portfolio_value = 0.0
+        total_weight = 0.0
+        total_strategic_weight = 0.0
+        total_diff = 0.0
+        total_weight_diff = 0.0
+        
+        # First pass: Calculate amounts and group by asset class
+        for holding in holdings:
+            try:
+                # Verify holding belongs to current user
+                if holding.user_id != current_user.id:
+                    continue
+                    
+                # Get the price based on use_myprice flag
+                if not holding.use_myprice:
+                    price_to_use = holding.fund.price
+                else:
+                    price_to_use = holding.price_per_unit
+
+                # Calculate amount = price * units
+                if price_to_use is not None:  # Changed condition to only check for price
+                    holding.calculated_amount = price_to_use * (holding.units or 0.0)  # Use 0.0 if units is None
+                    total_portfolio_value += holding.calculated_amount
+                    
+                    # Track amount by asset class
+                    asset_class = holding.fund.benchmark.asset_class
+                    if asset_class not in asset_class_sums:
+                        asset_class_sums[asset_class] = 0.0
+                        asset_class_strategic_sums[asset_class] = 0.0
+                        asset_class_diff_sums[asset_class] = 0.0
+                        asset_class_weight_diffs[asset_class] = 0.0
+                    asset_class_sums[asset_class] += holding.calculated_amount
+                    asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100
+                    
+                    # Group holdings by asset class
+                    if asset_class not in holdings_by_asset_class:
+                        holdings_by_asset_class[asset_class] = []
+                    holdings_by_asset_class[asset_class].append(holding)
+                else:
+                    holding.calculated_amount = None
+            except (TypeError, ValueError) as e:
+                print(f"Error processing holding {holding.id}: {str(e)}")
+                holding.calculated_amount = None
+        
+        # Calculate weight percentages and strategic amounts
+        for holding in holdings:
+            try:
+                if holding.calculated_amount is not None and total_portfolio_value > 0:
+                    holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
+                    total_weight += holding.calculated_weight
+                    total_strategic_weight += holding.strategic_weight * 100
+                    
+                    # Calculate strategic amount using the final total portfolio value
+                    holding.strategic_amount = (holding.strategic_weight * total_portfolio_value)
+                    
+                    # Calculate difference between actual and strategic amount
+                    holding.diff_amount = holding.calculated_amount - holding.strategic_amount
+                    total_diff += holding.diff_amount
+                    
+                    # Calculate difference between actual and strategic weight
+                    holding.diff_weight = holding.calculated_weight - (holding.strategic_weight * 100)
+                    total_weight_diff += holding.diff_weight
+                    
+                    # Add to asset class sums
+                    asset_class = holding.fund.benchmark.asset_class
+                    asset_class_diff_sums[asset_class] += holding.diff_amount
+                    asset_class_weight_diffs[asset_class] += holding.diff_weight
+                else:
+                    holding.calculated_weight = None
+                    holding.strategic_amount = None
+                    holding.diff_amount = None
+                    holding.diff_weight = None
+            except (TypeError, ValueError, ZeroDivisionError) as e:
+                print(f"Error calculating weights for holding {holding.id}: {str(e)}")
+                holding.calculated_weight = None
+                holding.strategic_amount = None
+                holding.diff_amount = None
+                holding.diff_weight = None
+        
+        # Sort the grouped holdings according to ASSET_CLASSES order
+        sorted_holdings_by_asset_class = {}
+        for asset_class in ASSET_CLASSES:
+            if asset_class in holdings_by_asset_class:
+                sorted_holdings_by_asset_class[asset_class] = holdings_by_asset_class[asset_class]
+        
+        # Add any asset classes not in ASSET_CLASSES at the end
+        for asset_class, holdings_list in holdings_by_asset_class.items():
+            if asset_class not in sorted_holdings_by_asset_class:
+                sorted_holdings_by_asset_class[asset_class] = holdings_list
+        
+        return render_template('portfolio_holdings_view.html', 
+                             portfolio=portfolio, 
+                             holdings=holdings,
+                             holdings_by_asset_class=sorted_holdings_by_asset_class,
+                             asset_class_sums=asset_class_sums,
+                             total_portfolio_value=total_portfolio_value,
+                             total_weight=total_weight,
+                             total_strategic_weight=total_strategic_weight)
+                             
+    except Exception as e:
+        print(f"Error in portfolio_holdings route: {str(e)}")
+        flash('An error occurred while loading the portfolio', 'error')
+        return redirect(url_for('get_portfolios'))
+
+
 # Holding routes
 @app.route('/add_fund_to_portfolio/<int:fund_id>', methods=['POST'])
 @login_required
 def add_fund_to_portfolio(fund_id):
-    portfolio_id = request.form.get('portfolio_id')
-    
-    if not portfolio_id:
-        flash('Please select a portfolio', 'error')
-        return redirect(url_for('get_funds'))
-    
-    # Verify the portfolio belongs to the user
-    portfolio = Portfolio.query.filter_by(
-        id=portfolio_id,
-        user_id=current_user.id
-    ).first_or_404()
-    
-    # Verify the fund exists and user has access
-    fund = Fund.query.filter(
-        (Fund.id == fund_id) & 
-        ((Fund.user_id == current_user.id) | (Fund.generic_fund == 1))
-    ).first_or_404()
-    
-    # Check if holding already exists
-    existing_holding = Holding.query.filter_by(
-        fund_id=fund_id,
-        portfolio_id=portfolio_id,
-        user_id=current_user.id
-    ).first()
-    
-    if existing_holding:
-        flash(f'Fund "{fund.fund_name}" is already in portfolio "{portfolio.portfolio_name}"', 'warning')
-        return redirect(url_for('get_funds'))
-    
     try:
-        new_holding = Holding(
+        # Validate portfolio_id from form
+        portfolio_id = request.form.get('portfolio_id')
+        if not portfolio_id:
+            flash('Please select a portfolio', 'error')
+            return redirect(url_for('get_funds'))
+        
+        try:
+            portfolio_id = int(portfolio_id)
+        except ValueError:
+            flash('Invalid portfolio selection', 'error')
+            return redirect(url_for('get_funds'))
+        
+        # Verify the portfolio belongs to the user and is not deleted
+        portfolio = Portfolio.query.filter_by(
+            id=portfolio_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not portfolio:
+            flash('Portfolio not found or you do not have permission to access it', 'error')
+            return redirect(url_for('get_funds'))
+        
+        # Verify the fund exists and user has access
+        fund = Fund.query.filter(
+            (Fund.id == fund_id) & 
+            ((Fund.user_id == current_user.id) | (Fund.generic_fund == 1))
+        ).first()
+        
+        if not fund:
+            flash('Fund not found or you do not have permission to access it', 'error')
+            return redirect(url_for('get_funds'))
+        
+        # Check if holding already exists
+        existing_holding = Holding.query.filter_by(
             fund_id=fund_id,
             portfolio_id=portfolio_id,
-            user_id=current_user.id,
-            units=0.0,  # Default to 0 units
-            price_per_unit=fund.price if fund.price else 0.0,  # Use fund's current price if available
-            use_myprice=0,  # Default to using fund's price
-            strategic_weight=0.0  # Default strategic weight
-        )
-        db.session.add(new_holding)
-        db.session.commit()
-        flash(f'Fund "{fund.fund_name}" added to portfolio "{portfolio.portfolio_name}" successfully', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash('An error occurred while adding the fund to portfolio', 'error')
-    
-    return redirect(url_for('get_funds'))
-
-@app.route('/holding/<int:id>/use_myprice', methods=['POST'])
-@login_required
-def update_holding_use_myprice(id):
-    data = request.get_json()
-    holding = Holding.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    
-    try:
-        holding.use_myprice = data['use_myprice']
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/holding/<int:id>/strategic_weight', methods=['POST'])
-@login_required
-def update_holding_strategic_weight(id):
-    data = request.get_json()
-    holding = Holding.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    
-    try:
-        weight = float(data['strategic_weight'])
-        if weight < 0 or weight > 1:
-            return jsonify({'error': 'Strategic weight must be between 0 and 1'}), 400
+            user_id=current_user.id
+        ).first()
+        
+        if existing_holding:
+            flash(f'Fund {fund.fund_name} is already in portfolio {portfolio.portfolio_name}', 'warning')
+            return redirect(url_for('get_funds'))
+        
+        # Create new holding with proper validation
+        try:
+            new_holding = Holding(
+                fund_id=fund_id,
+                portfolio_id=portfolio_id,
+                user_id=current_user.id,
+                units=0.0,  # Default to 0 units
+                price_per_unit=fund.price if fund.price is not None else 0.0,  # Use fund's current price if available
+                use_myprice=0,  # Default to using fund's price
+                strategic_weight=0.0  # Default strategic weight
+            )
             
-        holding.strategic_weight = weight
-        db.session.commit()
-        return jsonify({'success': True})
-    except ValueError:
-        return jsonify({'error': 'Invalid strategic weight value'}), 400
+            # Validate the holding before adding
+            if not all([
+                new_holding.fund_id,
+                new_holding.portfolio_id,
+                new_holding.user_id,
+                new_holding.units is not None,
+                new_holding.price_per_unit is not None,
+                new_holding.use_myprice is not None,
+                new_holding.strategic_weight is not None
+            ]):
+                raise ValueError("Invalid holding data")
+            
+            db.session.add(new_holding)
+            db.session.commit()
+            
+            flash(f'Fund {fund.fund_name} added to portfolio {portfolio.portfolio_name} successfully', 'success')
+            return redirect(url_for('portfolio_holdings', id=portfolio_id))
+            
+        except ValueError as ve:
+            db.session.rollback()
+            flash(f'Invalid holding data: {str(ve)}', 'error')
+            return redirect(url_for('get_funds'))
+            
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        print(f"Error adding fund to portfolio: {str(e)}")  # Log the error
+        flash('An error occurred while adding the fund to portfolio', 'error')
+        return redirect(url_for('get_funds'))
 
-@app.route('/holding/<int:id>', methods=['DELETE'])
+
+@app.route('/holding/<int:id>', methods=['POST'])
 @login_required
 def delete_holding(id):
-    holding = Holding.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    
     try:
+        # Get the holding and verify ownership
+        holding = Holding.query.filter_by(id=id).first()
+        if not holding:
+            flash('Holding not found', 'error')
+            return redirect(url_for('get_portfolios'))
+            
+        if holding.user_id != current_user.id:
+            flash('You do not have permission to delete this holding', 'error')
+            return redirect(url_for('get_portfolios'))
+            
+        # Get portfolio for redirect
+        portfolio = holding.portfolio
+        fund_name = holding.fund.fund_name if holding.fund else 'Unknown Fund'
+        portfolio_id = portfolio.id if portfolio else None
+        
+        # Delete the holding
         db.session.delete(holding)
         db.session.commit()
-        return jsonify({'success': True})
+        
+        flash(f'Successfully deleted {fund_name} from portfolio', 'success')
+        return redirect(url_for('portfolio_holdings', id=portfolio_id))
+        
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        flash('An error occurred while deleting the holding', 'error')
+        # If we have the portfolio ID, redirect there, otherwise go to portfolios list
+        if 'portfolio' in locals() and portfolio:
+            return redirect(url_for('portfolio_holdings', id=portfolio.id))
+        return redirect(url_for('get_portfolios'))
+
 
 @app.route('/debug/users')
 def debug_users():
