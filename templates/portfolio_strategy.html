@@ -1,134 +1,114 @@
 {% extends "base.html" %}
 
-{% block title %}{{ portfolio.portfolio_name }}{% endblock %}
+{% block title %}{{ portfolio.portfolio_name }} - Strategy{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4">
     <div class="header-section mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex flex-column">
-                <h2 class="main-title">
-                    <i class="fas fa-chart-pie me-2 text-primary"></i>{{ portfolio.portfolio_name }}
-                </h2>
-                <h4 class="subtitle">Set a strategy for this portfolio</h4>
+                <h2 class="main-title">Portfolio strategy</h2>
+                <h4 class="subtitle">
+                    <i class="fas fa-chart-pie me-2 text-primary small"></i>{{ portfolio.portfolio_name }}
+                </h4>
             </div>
         </div>
     </div>
 
-    <!-- Holdings Card -->
+    <!-- Strategy Overview Cards -->
+    <div class="row mb-4">
+        <!-- Strategy Description Card -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-book me-2 text-primary"></i>Strategy Description
+                        </h5>
+                        <button id="toggleLockBtn" type="button" class="btn btn-link p-0" style="color: #aaa;">
+                          <i id="lockIcon" class="fas fa-lock"></i>
+                        </button>
+                    </div>
+                    <form id="strategyDescForm" action="{{ url_for('portfolio_strategy', id=portfolio.id) }}" method="POST" style="margin-bottom:0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="update_strategy_description">
+                        <div id="descDisplay" {% if not portfolio.strategy_description %}class="text-muted"{% endif %}>
+                          {{ portfolio.strategy_description or 'No strategy description. Click the lock to add one.' }}
+                        </div>
+                        <textarea id="descEdit" name="strategy_description" class="form-control d-none" maxlength="500" rows="5" style="resize: vertical;">{{ portfolio.strategy_description }}</textarea>
+                        <div id="descSaveRow" class="mt-2 d-none">
+                          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                          <button type="button" class="btn btn-secondary btn-sm ms-2" id="cancelEditBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Allocation Card -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>Asset Allocation
+                    </h5>
+                    <div class="allocation-chart">
+                        <!-- Placeholder for pie chart -->
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                            <p>Asset allocation visualization will be displayed here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategy Card -->
     <div class="card">
         <div class="card-header">
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-chart-pie me-2 text-primary"></i>
-                    <h5 class="card-title mb-0">Portfolio Holdings</h5>
+                    <h5 class="card-title mb-0">Strategic Weights</h5>
                 </div>
-                <a href="{{ url_for('get_funds') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i>Add Holdings
-                </a>
             </div>
         </div>
         <div class="card-body" style="padding: 30px 20px 20px 20px;">
-            {% if holdings_by_asset_class %}
+            {% if holdings %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="holdingsTable">
                     <thead>
                         <tr>
-                            <th style="width: 40%" class="text-start"></th>
-                            <th colspan="3" class="text-center">Amount</th>
-                            <th colspan="3" class="text-center">Weight</th>
-                        </tr>
-                        <tr>
                             <th style="width: 40%" class="text-start">Fund Name</th>
-                            <th style="width: 10%" class="text-end">Portfolio</th>
-                            <th style="width: 10%" class="text-end">Strategic</th>
-                            <th style="width: 10%" class="text-end">Diff.</th>
-                            <th style="width: 10%" class="text-end">Portfolio</th>
-                            <th style="width: 10%" class="text-end">Strategic</th>
-                            <th style="width: 10%" class="text-end">Diff.</th>
+                            <th style="width: 60%" class="text-end">Strategic Weight</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for asset_class, holdings in holdings_by_asset_class.items() %}
+                        {% for asset_class, holdings_list in holdings_by_asset_class.items() %}
                         <!-- Asset Class Header Row -->
                         <tr class="asset-class-header">
                             <td class="asset-class-title">
                                 <strong><i class="fas fa-layer-group me-2"></i>{{ asset_class }}</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(asset_class_sums[asset_class]) if asset_class in asset_class_sums else '0.00' }}</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(asset_class_strategic_sums[asset_class] * total_portfolio_value / 100) if asset_class in asset_class_strategic_sums else '0.00' }}</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                {% if asset_class in asset_class_diff_sums %}
-                                <span class="diff-value {{ 'text-success' if asset_class_diff_sums[asset_class] > 0 else 'text-danger' }}">
-                                    €{{ "%.f"|format(asset_class_diff_sums[asset_class]) }}
-                                </span>
-                                {% endif %}
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <strong>{{ "%.f"|format((asset_class_sums[asset_class] / total_portfolio_value * 100) if total_portfolio_value > 0 and asset_class in asset_class_sums else 0) }}%</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <strong>{{ "%.f"|format(asset_class_strategic_sums[asset_class]) if asset_class in asset_class_strategic_sums else '0.00' }}%</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <span class="diff-value {{ 'text-success' if asset_class_weight_diffs[asset_class] > 0 else 'text-danger' }}">
-                                    {{ "%.f"|format(asset_class_weight_diffs[asset_class]) if asset_class in asset_class_weight_diffs else '0.00' }}%
-                                </span>
+                                <strong>{{ "%.1f"|format(asset_class_strategic_sums[asset_class]) }}%</strong>
                             </td>
                         </tr>
                         
                         <!-- Holdings for this Asset Class -->
-                        {% for holding in holdings %}
-                        <tr class="holding-row" data-holding-id="{{ holding.id }}">
-                            <td class="text-truncate text-start fund-name-cell" style="max-width: 0; cursor: pointer;" 
-                                onclick="showLongName(this, '{{ holding.fund.long_name }}')">
-                                {{ holding.fund.fund_name }}
-                            </td>
+                        {% for holding in holdings_list %}
+                        <tr class="holding-row">
+                            <td class="text-start">{{ holding.fund.fund_name }}</td>
                             <td class="text-end">
-                                {% if holding.calculated_amount %}
-                                €{{ "%.f"|format(holding.calculated_amount) }}
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                {% if holding.strategic_amount %}
-                                €{{ "%.f"|format(holding.strategic_amount) }}
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                {% if holding.diff_amount is not none %}
-                                €{{ "%.f"|format(holding.diff_amount) }}
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                {% if holding.calculated_weight %}
-                                {{ "%.f"|format(holding.calculated_weight) }}%
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                {% if holding.strategic_weight %}
-                                {{ "%.f"|format(holding.strategic_weight * 100) }}%
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                {% if holding.diff_weight is not none %}
-                                {{ "%.f"|format(holding.diff_weight) }}%
-                                {% else %}
-                                -
-                                {% endif %}
+                                <span class="strategic-weight-cell" 
+                                      data-bs-toggle="modal" 
+                                      data-bs-target="#editWeightModal"
+                                      data-holding-id="{{ holding.id }}"
+                                      data-fund-name="{{ holding.fund.fund_name }}"
+                                      data-weight="{{ holding.strategic_weight }}">
+                                    {{ "%.1f"|format(holding.strategic_weight * 100) }}%
+                                </span>
                             </td>
                         </tr>
                         {% endfor %}
@@ -140,44 +120,48 @@
                                 <strong><i class="fas fa-calculator me-2"></i>Sum</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(total_portfolio_value) if total_portfolio_value else '0.00' }}</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(total_strategic_weight * total_portfolio_value / 100) if total_strategic_weight else '0.00' }}</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                {% if total_diff is not none %}
-                                <span class="diff-value {{ 'text-success' if total_diff > 0 else 'text-danger' }}">
-                                    €{{ "%.f"|format(total_diff) }}
-                                </span>
-                                {% endif %}
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <strong>{{ "%.f"|format(total_weight) if total_weight else '0.00' }}%</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <strong>{{ "%.f"|format(total_strategic_weight) if total_strategic_weight else '0.00' }}%</strong>
-                            </td>
-                            <td class="asset-class-title text-end">
-                                <span class="diff-value {{ 'text-success' if total_weight_diff > 0 else 'text-danger' }}">
-                                    {{ "%.f"|format(total_weight_diff) if total_weight_diff is not none else '0.00' }}%
-                                </span>
+                                <strong>{{ "%.1f"|format(total_strategic_weight) }}%</strong>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <!-- Empty State -->
-            <div class="text-center text-muted" style="padding: 3rem 0;">
-                <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
-                <h5>No Holdings Found</h5>
-                <p>This portfolio doesn't have any holdings yet.</p>
-                <a href="{{ url_for('get_funds') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Add Your First Holding
-                </a>
+            <div class="text-center text-muted py-4">
+                <p>No holdings found in this portfolio.</p>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Weight Modal -->
+<div class="modal fade" id="editWeightModal" tabindex="-1" aria-labelledby="editWeightModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editWeightModalLabel">Edit Strategic Weight</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('portfolio_strategy', id=portfolio.id) }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="holding_id" id="modalHoldingId">
+                    <div class="mb-3">
+                        <label for="fundName" class="form-label">Fund</label>
+                        <input type="text" class="form-control" id="fundName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="strategic_weight" class="form-label">Strategic Weight (%)</label>
+                        <input type="number" class="form-control" id="strategic_weight" name="strategic_weight" 
+                               step="0.1" min="0" max="100" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -268,105 +252,95 @@
     box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
 }
 
-/* Price styling */
-.price-cell {
-    position: relative;
-}
-
-.price-cell.myprice-text {
-    cursor: pointer;
-}
-
-.myprice-text {
-    color: var(--primary-color) !important;
-    font-weight: 500;
-}
-
 /* Sum Row Styling */
 .sum-row {
     background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
     border-top: 2px solid var(--border-color);
 }
 
-.sum-title {
-    font-size: 0.9rem;
+.strategic-weight-cell {
     color: var(--primary-color);
-    padding: 0.25rem 0.25rem !important;
-    font-weight: 300;
-    height: 27px;
-}
-
-/* Fund name cell styling */
-.fund-name-cell {
     cursor: pointer;
-    transition: color 0.2s ease;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
 }
 
-.fund-name-cell:hover {
-    color: #000 !important;
-    font-weight: 500;
+.strategic-weight-cell:hover {
+    opacity: 0.7;
 }
 
-/* Difference bar styling */
-.diff-bar-container,
-.diff-bar,
-.holding-bar {
-    display: none;
+/* Strategy Description Card Styling */
+.strategy-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
 }
 
-.diff-value {
-    font-weight: 500;
-}
-
-.asset-class-header .diff-value,
-.sum-row .diff-value {
-    font-weight: 500;
-}
-
-.asset-class-header .diff-value.text-success,
-.sum-row .diff-value.text-success {
-    color: #28a745 !important;
-}
-
-.asset-class-header .diff-value.text-danger,
-.sum-row .diff-value.text-danger {
-    color: #dc3545 !important;
+/* Allocation Chart Card Styling */
+.allocation-chart {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Portfolio view loaded');
-    
-    // Initialize all tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-    
-    // Function to show long name tooltip
-    window.showLongName = function(element, longName) {
-        // Remove any existing tooltip
-        const existingTooltip = bootstrap.Tooltip.getInstance(element);
-        if (existingTooltip) {
-            existingTooltip.dispose();
-        }
-        
-        // Create new tooltip
-        const tooltip = new bootstrap.Tooltip(element, {
-            title: longName,
-            placement: 'top',
-            trigger: 'manual'
+    const editWeightModal = document.getElementById('editWeightModal');
+    if (editWeightModal) {
+        editWeightModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const holdingId = button.getAttribute('data-holding-id');
+            const fundName = button.getAttribute('data-fund-name');
+            const weight = button.getAttribute('data-weight');
+            
+            const modalHoldingId = editWeightModal.querySelector('#modalHoldingId');
+            const modalFundName = editWeightModal.querySelector('#fundName');
+            const modalWeight = editWeightModal.querySelector('#strategic_weight');
+            
+            modalHoldingId.value = holdingId;
+            modalFundName.value = fundName;
+            modalWeight.value = (parseFloat(weight) * 100).toFixed(1);
         });
-        
-        // Show tooltip
-        tooltip.show();
-        
-        // Hide tooltip after 3 seconds
-        setTimeout(() => {
-            tooltip.hide();
-        }, 3000);
-    };
+    }
+
+    const lockBtn = document.getElementById('toggleLockBtn');
+    const lockIcon = document.getElementById('lockIcon');
+    const descDisplay = document.getElementById('descDisplay');
+    const descEdit = document.getElementById('descEdit');
+    const descSaveRow = document.getElementById('descSaveRow');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    let editing = false;
+
+    lockBtn.addEventListener('click', function() {
+        editing = !editing;
+        if (editing) {
+            lockIcon.classList.remove('fa-lock');
+            lockIcon.classList.add('fa-lock-open');
+            descDisplay.classList.add('d-none');
+            descEdit.classList.remove('d-none');
+            descSaveRow.classList.remove('d-none');
+            descEdit.focus();
+        } else {
+            lockIcon.classList.remove('fa-lock-open');
+            lockIcon.classList.add('fa-lock');
+            descDisplay.classList.remove('d-none');
+            descEdit.classList.add('d-none');
+            descSaveRow.classList.add('d-none');
+        }
+    });
+
+    cancelEditBtn.addEventListener('click', function() {
+        editing = false;
+        lockIcon.classList.remove('fa-lock-open');
+        lockIcon.classList.add('fa-lock');
+        descDisplay.classList.remove('d-none');
+        descEdit.classList.add('d-none');
+        descSaveRow.classList.add('d-none');
+        // Reset textarea to original value
+        descEdit.value = descDisplay.textContent.trim();
+    });
 });
 </script>
 {% endblock %} 

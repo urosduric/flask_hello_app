@@ -95,6 +95,7 @@ class Portfolio(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_default = db.Column(db.Integer, nullable=False, default=0)
     paid_in = db.Column(db.Float, nullable=True, default=0.0)
+    strategy_description = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
 
     __table_args__ = (
@@ -111,6 +112,7 @@ class Portfolio(db.Model):
             'user_id': self.user_id,
             'is_default': self.is_default,
             'paid_in': self.paid_in,
+            'strategy_description': self.strategy_description,
             'created_at': self.created_at.isoformat()
         }
 
@@ -294,12 +296,15 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
 # Routes
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if current_user.is_authenticated:
         return redirect(url_for('get_portfolios'))
     return redirect(url_for('register'))
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")  # Rate limit login attempts
@@ -1223,140 +1228,131 @@ def delete_portfolio(id):
         flash(f'An error occurred while deleting the portfolio: {str(e)}', 'error')
         return redirect(url_for('get_portfolios'))
 
-@app.route('/portfolio_strategy/<int:id>')
+
+@app.route('/portfolio_strategy/<int:id>', methods=['GET', 'POST'])
 @login_required
 def portfolio_strategy(id):
-    from some_data import ASSET_CLASSES
-    
-    portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    
-    # Get holdings with their fund and benchmark data
-    holdings = Holding.query.filter_by(portfolio_id=id).join(Holding.fund).order_by(Fund.fund_name).all()
-    
-    # Initialize dictionaries for tracking
-    asset_class_sums = {}
-    asset_class_strategic_sums = {}  # New dictionary for strategic weight sums
-    asset_class_diff_sums = {}  # New dictionary for difference sums
-    asset_class_weight_diffs = {}  # New dictionary for weight differences
-    holdings_by_asset_class = {}
-    total_portfolio_value = 0.0
-    total_weight = 0.0
-    total_strategic_weight = 0.0  # New variable for total strategic weight
-    total_diff = 0.0  # New variable for total difference
-    total_weight_diff = 0.0  # New variable for total weight difference
-    
-    # First pass: Calculate amounts and group by asset class
-    for holding in holdings:
-        try:
-            # Get the price based on use_myprice flag
-            if not holding.use_myprice:
-                price_to_use = holding.fund.price
-            else:
-                price_to_use = holding.price_per_unit
+    try:
+        # Check if portfolio exists
+        portfolio = Portfolio.query.filter_by(id=id).first()
+        if not portfolio:
+            flash('Portfolio not found', 'error')
+            return redirect(url_for('get_portfolios'))
+        # Check if user has permission to access this portfolio
+        if portfolio.user_id != current_user.id:
+            flash('You do not have permission to access this portfolio', 'error')
+            return redirect(url_for('get_portfolios'))
 
-            # Calculate amount = price * units
-            if price_to_use and holding.units:
-                holding.calculated_amount = price_to_use * holding.units
-                total_portfolio_value += holding.calculated_amount
+        # Handle POST request for updating strategic weight or description
+        if request.method == 'POST':
+            action = request.form.get('action')
+            if action == 'update_strategy_description':
+                desc = request.form.get('strategy_description', '').strip()
+                if len(desc) > 500:
+                    flash('Description must be 500 characters or less.', 'danger')
+                else:
+                    portfolio.strategy_description = desc
+                    db.session.commit()
+                    flash('Strategy description updated.', 'success')
+                return redirect(url_for('portfolio_strategy', id=id))
+            # Existing code for updating strategic weight
+            holding_id = request.form.get('holding_id')
+            strategic_weight = request.form.get('strategic_weight')
+            
+            # Validate required fields
+            if not holding_id or not strategic_weight:
+                flash('Missing required fields', 'error')
+                return redirect(url_for('portfolio_strategy', id=id))
+            
+            try:
+                # Get and validate holding
+                holding = Holding.query.filter_by(id=holding_id).first()
+                if not holding:
+                    flash('Holding not found', 'error')
+                    return redirect(url_for('portfolio_strategy', id=id))
                 
-                # Track amount by asset class
-                asset_class = holding.fund.benchmark.asset_class
-                if asset_class not in asset_class_sums:
-                    asset_class_sums[asset_class] = 0.0
-                    asset_class_strategic_sums[asset_class] = 0.0  # Initialize strategic sum
-                    asset_class_diff_sums[asset_class] = 0.0  # Initialize diff sum
-                    asset_class_weight_diffs[asset_class] = 0.0  # Initialize weight diff sum
-                asset_class_sums[asset_class] += holding.calculated_amount
-                asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100  # Add strategic weight
+                # Verify holding belongs to user and portfolio
+                if holding.user_id != current_user.id or holding.portfolio_id != portfolio.id:
+                    flash('You do not have permission to modify this holding', 'error')
+                    return redirect(url_for('portfolio_strategy', id=id))
                 
-                # Group holdings by asset class
-                if asset_class not in holdings_by_asset_class:
-                    holdings_by_asset_class[asset_class] = []
-                holdings_by_asset_class[asset_class].append(holding)
-            else:
-                holding.calculated_amount = None
-        except (TypeError, ValueError):
-            holding.calculated_amount = None
-    
-    # Calculate weight percentages and strategic amounts
-    for holding in holdings:
-        try:
-            if holding.calculated_amount and total_portfolio_value > 0:
-                holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
-                total_weight += holding.calculated_weight
-                total_strategic_weight += holding.strategic_weight * 100
+                # Convert and validate strategic weight
+                try:
+                    strategic_weight = float(strategic_weight)
+                except ValueError:
+                    flash('Invalid strategic weight format', 'error')
+                    return redirect(url_for('portfolio_strategy', id=id))
                 
-                # Calculate strategic amount using the final total portfolio value
-                holding.strategic_amount = (holding.strategic_weight * total_portfolio_value)
+                if strategic_weight < 0 or strategic_weight > 100:
+                    flash('Strategic weight must be between 0 and 100', 'error')
+                    return redirect(url_for('portfolio_strategy', id=id))
                 
-                # Calculate difference between actual and strategic amount
-                holding.diff_amount = holding.calculated_amount - holding.strategic_amount
-                total_diff += holding.diff_amount
+                # Update holding
+                holding.strategic_weight = strategic_weight / 100  # Convert percentage to decimal
+                db.session.commit()
+                flash('Strategic weight updated successfully', 'success')
                 
-                # Calculate difference between actual and strategic weight
-                holding.diff_weight = holding.calculated_weight - (holding.strategic_weight * 100)
-                total_weight_diff += holding.diff_weight
-                
-                # Add to asset class sums
-                asset_class = holding.fund.benchmark.asset_class
-                asset_class_diff_sums[asset_class] += holding.diff_amount
-                asset_class_weight_diffs[asset_class] += holding.diff_weight
-            else:
-                holding.calculated_weight = None
-                holding.strategic_amount = None
-                holding.diff_amount = None
-                holding.diff_weight = None
-        except (TypeError, ValueError, ZeroDivisionError):
-            holding.calculated_weight = None
-            holding.strategic_amount = None
-            holding.diff_amount = None
-            holding.diff_weight = None
-    
-    # Sort the grouped holdings according to ASSET_CLASSES order
-    sorted_holdings_by_asset_class = {}
-    for asset_class in ASSET_CLASSES:
-        if asset_class in holdings_by_asset_class:
-            sorted_holdings_by_asset_class[asset_class] = holdings_by_asset_class[asset_class]
-    
-    # Add any asset classes not in ASSET_CLASSES at the end
-    for asset_class, holdings_list in holdings_by_asset_class.items():
-        if asset_class not in sorted_holdings_by_asset_class:
-            sorted_holdings_by_asset_class[asset_class] = holdings_list
-    
-    # Calculate max absolute difference for bar scaling
-    max_positive_holding_diff = max(
-        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount > 0),
-        default=0
-    )
-    
-    max_negative_holding_diff = abs(min(
-        (h.diff_amount for h in holdings if h.diff_amount is not None and h.diff_amount < 0),
-        default=0
-    ))
-    
-    max_asset_class_diff = max(
-        (abs(d) for d in asset_class_diff_sums.values()),
-        default=0
-    )
-    
-    return render_template('portfolio_strategy.html', 
-                         portfolio=portfolio, 
-                         holdings=holdings,
-                         holdings_by_asset_class=sorted_holdings_by_asset_class,
-                         asset_class_sums=asset_class_sums,
-                         asset_class_strategic_sums=asset_class_strategic_sums,
-                         asset_class_diff_sums=asset_class_diff_sums,
-                         asset_class_weight_diffs=asset_class_weight_diffs,
-                         total_portfolio_value=total_portfolio_value,
-                         total_weight=total_weight,
-                         total_strategic_weight=total_strategic_weight,
-                         total_diff=total_diff,
-                         total_weight_diff=total_weight_diff,
-                         max_positive_holding_diff=max_positive_holding_diff,
-                         max_negative_holding_diff=max_negative_holding_diff,
-                         max_asset_class_diff=max_asset_class_diff)
-
-
+            except Exception as e:
+                db.session.rollback()
+                flash('An error occurred while updating the strategic weight', 'error')
+                return redirect(url_for('portfolio_strategy', id=id))
+            
+            return redirect(url_for('portfolio_strategy', id=id))
+        
+        # GET request - get holdings with their strategic weights
+        holdings = Holding.query.filter_by(portfolio_id=id).join(Holding.fund).order_by(Fund.fund_name).all()
+        
+        # Check if portfolio has any holdings
+        if not holdings:
+            flash('This portfolio has no holdings. Add some funds to set strategic weights.', 'info')
+            return render_template('portfolio_strategy.html', 
+                                portfolio=portfolio,
+                                holdings=[],
+                                holdings_by_asset_class={},
+                                asset_class_strategic_sums={},
+                                total_strategic_weight=0.0)
+        
+        # Group holdings by asset class
+        holdings_by_asset_class = {}
+        asset_class_strategic_sums = {}
+        total_strategic_weight = 0.0
+        
+        for holding in holdings:
+            asset_class = holding.fund.benchmark.asset_class
+            if asset_class not in holdings_by_asset_class:
+                holdings_by_asset_class[asset_class] = []
+                asset_class_strategic_sums[asset_class] = 0.0
+            holdings_by_asset_class[asset_class].append(holding)
+            asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100
+            total_strategic_weight += holding.strategic_weight * 100
+        
+        # Check if total strategic weight is not 100%
+        if abs(total_strategic_weight - 100.0) > 0:  
+            flash(f'Warning: Strategic weights sum to {total_strategic_weight:.1f}%, not 100%', 'warning')
+        
+        # Sort the grouped holdings according to ASSET_CLASSES order
+        sorted_holdings_by_asset_class = {}
+        for asset_class in ASSET_CLASSES:
+            if asset_class in holdings_by_asset_class:
+                sorted_holdings_by_asset_class[asset_class] = holdings_by_asset_class[asset_class]
+        
+        # Add any asset classes not in ASSET_CLASSES at the end
+        for asset_class, holdings_list in holdings_by_asset_class.items():
+            if asset_class not in sorted_holdings_by_asset_class:
+                sorted_holdings_by_asset_class[asset_class] = holdings_list
+        
+        return render_template('portfolio_strategy.html', 
+                             portfolio=portfolio,
+                             holdings=holdings,
+                             holdings_by_asset_class=sorted_holdings_by_asset_class,
+                             asset_class_strategic_sums=asset_class_strategic_sums,
+                             total_strategic_weight=total_strategic_weight)
+                             
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error in portfolio_strategy route: {str(e)}")
+        flash('An unexpected error occurred', 'error')
+        return redirect(url_for('get_portfolios'))
 
 @app.route('/portfolio_holdings/<int:id>', methods=['GET', 'POST'])
 @login_required
