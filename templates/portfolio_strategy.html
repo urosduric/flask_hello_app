@@ -53,11 +53,7 @@
                         <i class="fas fa-chart-pie me-2 text-primary"></i>Asset Allocation
                     </h5>
                     <div class="allocation-chart">
-                        <!-- Placeholder for pie chart -->
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-chart-pie fa-3x mb-3"></i>
-                            <p>Asset allocation visualization will be displayed here</p>
-                        </div>
+                        <div id="chart" style="width: 100%; height: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -277,15 +273,50 @@
 
 /* Allocation Chart Card Styling */
 .allocation-chart {
-    min-height: 200px;
+    height: 220px;  /* Fixed height for consistency */
+    width: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;  /* Align to the left */
+    position: relative;
+    overflow: hidden;  /* Prevent overflow */
+}
+
+#chart {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;  /* Force full width */
+    height: 100% !important;  /* Force full height */
 }
 </style>
 
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var chartData = {{ chart_json | tojson | safe }};
+    if (chartData) {
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
+        
+        Plotly.newPlot('chart', chartData.data, chartData.layout, config);
+
+        // Make chart responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                Plotly.Plots.resize('chart');
+            }, 100);
+        });
+    }
+    
     const editWeightModal = document.getElementById('editWeightModal');
     if (editWeightModal) {
         editWeightModal.addEventListener('show.bs.modal', function(event) {

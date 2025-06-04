@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, session
+from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, timedelta
@@ -13,6 +13,9 @@ from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 import sys
 from some_data import ASSET_CLASSES, REGIONS, MARKET_TYPES, BOND_RATING, BOND_TYPES, VEHICLE
+import plotly.graph_objects as go
+import plotly.express as px
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
@@ -1310,9 +1313,10 @@ def portfolio_strategy(id):
                                 holdings=[],
                                 holdings_by_asset_class={},
                                 asset_class_strategic_sums={},
-                                total_strategic_weight=0.0)
+                                total_strategic_weight=0.0,
+                                chart_json=None)
         
-        # Group holdings by asset class
+        # Group holdings by asset class and calculate sums
         holdings_by_asset_class = {}
         asset_class_strategic_sums = {}
         total_strategic_weight = 0.0
@@ -1325,6 +1329,56 @@ def portfolio_strategy(id):
             holdings_by_asset_class[asset_class].append(holding)
             asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100
             total_strategic_weight += holding.strategic_weight * 100
+        
+        # Create pie chart data
+        labels = []
+        values = []
+        for asset_class, weight in asset_class_strategic_sums.items():
+            if weight > 0:
+                labels.append(asset_class)
+                values.append(float(weight))
+
+        # Create Plotly figure
+        if values:
+            fig = go.Figure(data=[go.Pie(
+                labels=labels,
+                values=values,
+                hole=0.4,
+                textinfo='value+percent',
+                textposition='inside',
+                textfont=dict(size=14),
+                marker=dict(colors=px.colors.qualitative.Set3[:len(labels)]),
+                hovertemplate='<b>%{label}</b><br>%{value:.1f}%<extra></extra>'
+            )])
+            
+            fig.update_traces(
+                texttemplate='%{value:.1f}%'
+            )
+            
+            fig.update_layout(
+                showlegend=True,
+                legend=dict(
+                    orientation="v",
+                    yanchor="middle",
+                    y=0.5,
+                    xanchor="left",
+                    x=1.05,
+                    font=dict(size=12),
+                    bgcolor='rgba(255,255,255,0.8)',
+                    bordercolor='rgba(0,0,0,0.1)',
+                    borderwidth=1
+                ),
+                margin=dict(t=20, l=20, r=120, b=20),  # Increased right margin for legend
+                height=240,            # Adjusted height
+                autosize=True,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                dragmode=False
+            )
+            
+            chart_json = json.loads(fig.to_json())
+        else:
+            chart_json = None
         
         # Check if total strategic weight is not 100%
         if abs(total_strategic_weight - 100.0) > 0:  
@@ -1346,7 +1400,8 @@ def portfolio_strategy(id):
                              holdings=holdings,
                              holdings_by_asset_class=sorted_holdings_by_asset_class,
                              asset_class_strategic_sums=asset_class_strategic_sums,
-                             total_strategic_weight=total_strategic_weight)
+                             total_strategic_weight=total_strategic_weight,
+                             chart_json=chart_json)
                              
     except Exception as e:
         # Log the error for debugging
