@@ -4,19 +4,23 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="header-section mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex flex-column">
-                <h2 class="main-title">Portfolio strategy</h2>
-                <h4 class="subtitle">
-                    <i class="fas fa-chart-pie me-2 text-primary small"></i>{{ portfolio.portfolio_name }}
-                </h4>
+    <div class="header-section">
+        <div class="header-content">
+            <div class="portfolio-badge">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="header-text">
+                <h2 class="portfolio-name">{{ portfolio.portfolio_name }}</h2>
+                <div class="strategy-label">
+                    <i class="fas fa-chess"></i>
+                    <span>Strategy Planning</span>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Strategy Overview Cards -->
-    <div class="row mb-4">
+    <div class="row mb-4" style="padding-bottom: 1cm;">
 
         <!-- Asset Allocation Card -->
         <div class="col-md-6">
@@ -69,7 +73,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-chart-pie me-2 text-primary"></i>
-                    <h5 class="card-title mb-0">Strategic Weights</h5>
+                    <h5 class="card-title mb-0"> Strategic Weights</h5>
                 </div>
             </div>
         </div>
@@ -80,7 +84,7 @@
                     <thead>
                         <tr>
                             <th style="width: 40%" class="text-start">Fund Name</th>
-                            <th style="width: 60%" class="text-end">Strategic Weight</th>
+                            <th style="width: 60%" class="text-end">Weight</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -125,9 +129,20 @@
                     </tbody>
                 </table>
             </div>
+            <div class="text-end mt-4">
+                <a href="{{ url_for('get_funds') }}" class="add-holding-link">
+                    <i class="fas fa-plus me-2"></i>Add new fund from funds table
+                </a>
+            </div>
             {% else %}
-            <div class="text-center text-muted py-4">
-                <p>No holdings found in this portfolio.</p>
+            <!-- Empty State -->
+            <div class="text-center text-muted" style="padding: 3rem 0;">
+                <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+                <h5>No Holdings Found</h5>
+                <p>This portfolio doesn't have any holdings yet.</p>
+                <a href="{{ url_for('get_funds') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add Your First Holding
+                </a>
             </div>
             {% endif %}
         </div>
@@ -166,25 +181,78 @@
 </div>
 
 <style>
-/* Page-specific styling */
+/* Header styling */
 .header-section {
-    padding: 2rem 0;
+    padding: 2.5rem 0;
     margin-bottom: 2rem;
+    position: relative;
+    background: linear-gradient(120deg, var(--primary-color) 0%, #4a90e2 100%);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
-.main-title {
-    font-size: 2.5rem;
+.header-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(255,255,255,0.05)' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.8;
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.portfolio-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.5rem;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.portfolio-badge i {
+    font-size: 1.8rem;
+    color: white;
+}
+
+.header-text {
+    color: white;
+}
+
+.portfolio-name {
+    font-size: 2rem;
     font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
+    margin: 0;
     letter-spacing: -0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.subtitle {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 0;
+.strategy-label {
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.strategy-label i {
+    margin-right: 0.5rem;
+    font-size: 1rem;
 }
 
 .card {
@@ -214,15 +282,15 @@
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border-bottom: 2px solid var(--border-color);
     font-weight: 600;
-    padding: 0.25rem 0.25rem;
-    height: 22px;
+    padding: 0.5rem 0.5rem;
+    height: 38px;
     color: var(--text-color);
 }
 
 .table td {
-    padding: 0.25rem 0.25rem;
+    padding: 0.5rem 0.5rem;
     vertical-align: middle;
-    height: 27px;
+    height: 38px;
     font-size: 0.9rem;
 }
 
@@ -235,9 +303,9 @@
 .asset-class-title {
     font-size: 0.9rem;
     color: var(--primary-color);
-    padding: 0.25rem 0.25rem !important;
+    padding: 0.5rem 0.5rem !important;
     font-weight: 300;
-    height: 27px;
+    height: 38px;
 }
 
 /* Holdings Row Styling */
@@ -294,12 +362,35 @@
     width: 100% !important;  /* Force full width */
     height: 100% !important;  /* Force full height */
 }
+
+/* Add holding link styling */
+.add-holding-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    background-color: rgba(45, 125, 237, 0.1);
+}
+
+.add-holding-link:hover {
+    color: var(--primary-color);
+    background-color: rgba(45, 125, 237, 0.15);
+    transform: translateX(2px);
+}
+
+.add-holding-link i {
+    transition: transform 0.2s ease;
+}
 </style>
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var chartData = {{ chart_json | tojson | safe }};
+    var chartData = JSON.parse('{{ chart_json | tojson | safe }}');
     if (chartData) {
         var config = {
             displayModeBar: false,
@@ -347,34 +438,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let editing = false;
 
-    lockBtn.addEventListener('click', function() {
-        editing = !editing;
-        if (editing) {
-            lockIcon.classList.remove('fa-lock');
-            lockIcon.classList.add('fa-lock-open');
-            descDisplay.classList.add('d-none');
-            descEdit.classList.remove('d-none');
-            descSaveRow.classList.remove('d-none');
-            descEdit.focus();
-        } else {
+    if (lockBtn) {
+        lockBtn.addEventListener('click', function() {
+            editing = !editing;
+            if (editing) {
+                lockIcon.classList.remove('fa-lock');
+                lockIcon.classList.add('fa-lock-open');
+                descDisplay.classList.add('d-none');
+                descEdit.classList.remove('d-none');
+                descSaveRow.classList.remove('d-none');
+                descEdit.focus();
+            } else {
+                lockIcon.classList.remove('fa-lock-open');
+                lockIcon.classList.add('fa-lock');
+                descDisplay.classList.remove('d-none');
+                descEdit.classList.add('d-none');
+                descSaveRow.classList.add('d-none');
+            }
+        });
+    }
+
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', function() {
+            editing = false;
             lockIcon.classList.remove('fa-lock-open');
             lockIcon.classList.add('fa-lock');
             descDisplay.classList.remove('d-none');
             descEdit.classList.add('d-none');
             descSaveRow.classList.add('d-none');
-        }
-    });
-
-    cancelEditBtn.addEventListener('click', function() {
-        editing = false;
-        lockIcon.classList.remove('fa-lock-open');
-        lockIcon.classList.add('fa-lock');
-        descDisplay.classList.remove('d-none');
-        descEdit.classList.add('d-none');
-        descSaveRow.classList.add('d-none');
-        // Reset textarea to original value
-        descEdit.value = descDisplay.textContent.trim();
-    });
+            // Reset textarea to original value
+            descEdit.value = descDisplay.textContent.trim();
+        });
+    }
 });
 </script>
 {% endblock %} 

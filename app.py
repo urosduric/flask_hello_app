@@ -1041,7 +1041,18 @@ def view_portfolio(id):
     total_diff = 0.0  # New variable for total difference
     total_weight_diff = 0.0  # New variable for total weight difference
     
-    # First pass: Calculate amounts and group by asset class
+    # First initialize all asset class groups from the holdings
+    for holding in holdings:
+        asset_class = holding.fund.benchmark.asset_class
+        if asset_class not in holdings_by_asset_class:
+            holdings_by_asset_class[asset_class] = []
+            asset_class_sums[asset_class] = 0.0
+            asset_class_strategic_sums[asset_class] = 0.0
+            asset_class_diff_sums[asset_class] = 0.0
+            asset_class_weight_diffs[asset_class] = 0.0
+        holdings_by_asset_class[asset_class].append(holding)
+    
+    # Then calculate amounts and sums
     for holding in holdings:
         try:
             # Get the price based on use_myprice flag
@@ -1051,24 +1062,14 @@ def view_portfolio(id):
                 price_to_use = holding.price_per_unit
 
             # Calculate amount = price * units
-            if price_to_use and holding.units:
-                holding.calculated_amount = price_to_use * holding.units
+            if price_to_use is not None:
+                holding.calculated_amount = price_to_use * (holding.units or 0.0)
                 total_portfolio_value += holding.calculated_amount
                 
                 # Track amount by asset class
                 asset_class = holding.fund.benchmark.asset_class
-                if asset_class not in asset_class_sums:
-                    asset_class_sums[asset_class] = 0.0
-                    asset_class_strategic_sums[asset_class] = 0.0  # Initialize strategic sum
-                    asset_class_diff_sums[asset_class] = 0.0  # Initialize diff sum
-                    asset_class_weight_diffs[asset_class] = 0.0  # Initialize weight diff sum
                 asset_class_sums[asset_class] += holding.calculated_amount
-                asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100  # Add strategic weight
-                
-                # Group holdings by asset class
-                if asset_class not in holdings_by_asset_class:
-                    holdings_by_asset_class[asset_class] = []
-                holdings_by_asset_class[asset_class].append(holding)
+                asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100
             else:
                 holding.calculated_amount = None
         except (TypeError, ValueError):
@@ -1487,13 +1488,20 @@ def portfolio_holdings(id):
         total_diff = 0.0
         total_weight_diff = 0.0
         
-        # First pass: Calculate amounts and group by asset class
+        # First initialize all asset class groups from the holdings
+        for holding in holdings:
+            asset_class = holding.fund.benchmark.asset_class
+            if asset_class not in holdings_by_asset_class:
+                holdings_by_asset_class[asset_class] = []
+                asset_class_sums[asset_class] = 0.0
+                asset_class_strategic_sums[asset_class] = 0.0
+                asset_class_diff_sums[asset_class] = 0.0
+                asset_class_weight_diffs[asset_class] = 0.0
+            holdings_by_asset_class[asset_class].append(holding)
+        
+        # Then calculate amounts and sums
         for holding in holdings:
             try:
-                # Verify holding belongs to current user
-                if holding.user_id != current_user.id:
-                    continue
-                    
                 # Get the price based on use_myprice flag
                 if not holding.use_myprice:
                     price_to_use = holding.fund.price
@@ -1501,34 +1509,23 @@ def portfolio_holdings(id):
                     price_to_use = holding.price_per_unit
 
                 # Calculate amount = price * units
-                if price_to_use is not None:  # Changed condition to only check for price
-                    holding.calculated_amount = price_to_use * (holding.units or 0.0)  # Use 0.0 if units is None
+                if price_to_use is not None:
+                    holding.calculated_amount = price_to_use * (holding.units or 0.0)
                     total_portfolio_value += holding.calculated_amount
                     
                     # Track amount by asset class
                     asset_class = holding.fund.benchmark.asset_class
-                    if asset_class not in asset_class_sums:
-                        asset_class_sums[asset_class] = 0.0
-                        asset_class_strategic_sums[asset_class] = 0.0
-                        asset_class_diff_sums[asset_class] = 0.0
-                        asset_class_weight_diffs[asset_class] = 0.0
                     asset_class_sums[asset_class] += holding.calculated_amount
                     asset_class_strategic_sums[asset_class] += holding.strategic_weight * 100
-                    
-                    # Group holdings by asset class
-                    if asset_class not in holdings_by_asset_class:
-                        holdings_by_asset_class[asset_class] = []
-                    holdings_by_asset_class[asset_class].append(holding)
                 else:
                     holding.calculated_amount = None
-            except (TypeError, ValueError) as e:
-                print(f"Error processing holding {holding.id}: {str(e)}")
+            except (TypeError, ValueError):
                 holding.calculated_amount = None
         
         # Calculate weight percentages and strategic amounts
         for holding in holdings:
             try:
-                if holding.calculated_amount is not None and total_portfolio_value > 0:
+                if holding.calculated_amount and total_portfolio_value > 0:
                     holding.calculated_weight = (holding.calculated_amount / total_portfolio_value) * 100
                     total_weight += holding.calculated_weight
                     total_strategic_weight += holding.strategic_weight * 100
@@ -1553,8 +1550,7 @@ def portfolio_holdings(id):
                     holding.strategic_amount = None
                     holding.diff_amount = None
                     holding.diff_weight = None
-            except (TypeError, ValueError, ZeroDivisionError) as e:
-                print(f"Error calculating weights for holding {holding.id}: {str(e)}")
+            except (TypeError, ValueError, ZeroDivisionError):
                 holding.calculated_weight = None
                 holding.strategic_amount = None
                 holding.diff_amount = None
