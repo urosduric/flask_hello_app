@@ -1368,8 +1368,8 @@ def portfolio_strategy(id):
                     bordercolor='rgba(0,0,0,0.1)',
                     borderwidth=1
                 ),
-                margin=dict(t=20, l=20, r=120, b=20),  # Increased right margin for legend
-                height=240,            # Adjusted height
+                margin=dict(t=20, l=20, r=120, b=20),
+                height=260,            # Increased height by ~1cm (40px)
                 autosize=True,
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
