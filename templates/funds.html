@@ -160,9 +160,11 @@
                                         <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
                                     </div>
                                 </div>
+                                <hr class="my-4" style="opacity: 0.1;">
+
                                 <div class="ms-auto">
                                     <a href="{{ url_for('new_fund') }}" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-plus me-1"></i> Define your own fund
+                                        <i class="fas fa-plus me-1"></i> Define new fund
                                     </a>
                                 </div>
                             </div>
@@ -322,6 +324,26 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+
+/* Search field styling */
+.input-group {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.input-group .input-group-text {
+    background-color: #f8f9fa;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    color: #6c757d;
+}
+
+.input-group .form-control {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
 
 </style>
 

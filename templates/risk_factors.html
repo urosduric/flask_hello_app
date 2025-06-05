@@ -4,11 +4,20 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="header-section mb-4">
-        <div class="d-flex flex-column">
-            <h2 class="main-title">Risk factors</h2>
-            <h4 class="subtitle">Add performance data needed for simulations</h4>
+    <div class="refined-header">
+        <div class="accent-line"></div>
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">Risk Factors</h1>
+                <h2 class="portfolio-subtitle">
+                    Add performance data needed for simulations
+                </h2>
+            </div>
         </div>
+    </div>
+
+    <div class="section-divider">
+        <span> OVERVIEW</span>
     </div>
 
     {% if error %}
@@ -17,17 +26,13 @@
     </div>
     {% endif %}
 
-    <div class="card">
+    <div class="card card-strategy">
         <div class="card-header">
             <div class="d-flex align-items-center">
                 <i class="fas fa-exclamation-triangle me-2 text-primary"></i>
-                <h5 class="card-title mb-0">Risk Factor Management</h5>
+                <h5 class="card-title mb-0"> Available Risk Factors</h5>
                 <div class="ms-auto">
-                    {% if current_user.is_admin() %}
-                    <a href="{{ url_for('new_risk_factor') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add Factor
-                    </a>
-                    {% endif %}
+            
                 </div>
             </div>
         </div>
@@ -110,10 +115,16 @@
                                     <div class="ps-3 pagination-text">
                                         Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> entries
                                     </div>
-                                    <div class="btn-group pe-3">
+                                    <div class="btn-group">
                                         <button type="button" class="btn btn-outline-primary" id="prevPage" disabled>Previous</button>
                                         <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
                                     </div>
+                                </div>
+                                <hr class="my-4" style="opacity: 0.1;">
+                                <div class="ms-auto">
+                                <a href="{{ url_for('new_risk_factor') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus me-1"></i> Add new factor
+                                </a>
                                 </div>
                             </div>
                         </div>
@@ -122,53 +133,13 @@
             </div>
         </div>
     </div>
+        <!-- Footer Separator -->
+<div class="footer-separator">
+    <div class="separator-line"></div>
+</div>
 </div>
 
 <style>
-
-.header-section {
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
-
-.main-title {
-    font-size: 2.5rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.5px;
-}
-
-.subtitle {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 0;
-}
-
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-}
-
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
 .table {
     width: 100%;
     margin-bottom: 0;
@@ -233,8 +204,26 @@
     background-color: var(--light-bg);
 }
 
+.list-group-item.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
 .border-end {
     border-right: 1px solid var(--border-color) !important;
+}
+
+/* Adjust btn-outline-primary colors to match our theme */
+.btn-outline-primary {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
 }
 
 /* Pagination text styles */
@@ -284,19 +273,24 @@
     white-space: nowrap;
 }
 
-/* Header button styling */
-.card-header .btn {
-    font-size: 0.85rem;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+/* Search field styling */
+.input-group {
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.card-header .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.input-group .input-group-text {
+    background-color: #f8f9fa;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    color: #6c757d;
 }
+
+.input-group .form-control {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
 </style>
 
 <script>

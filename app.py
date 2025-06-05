@@ -16,6 +16,7 @@ from some_data import ASSET_CLASSES, REGIONS, MARKET_TYPES, BOND_RATING, BOND_TY
 import plotly.graph_objects as go
 import plotly.express as px
 import json
+import numpy as np
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
@@ -876,8 +877,122 @@ def view_risk_factor(id):
         return redirect(url_for('home'))
         
     risk_factor = RiskFactor.query.get_or_404(id)
-    data = RiskFactorData.query.filter_by(risk_factor_id=id).order_by(RiskFactorData.date.desc()).all()
-    return render_template('view_risk_factor.html', risk_factor=risk_factor, data=data)
+    data = RiskFactorData.query.filter_by(risk_factor_id=id).order_by(RiskFactorData.date).all()
+    
+    # Prepare data for cumulative returns calculation
+    dates = [d.date.strftime('%Y-%m-%d') for d in data]
+    returns = [float(d.daily_return)/100 for d in data]  # Convert percentage to decimal
+    
+    # Calculate cumulative returns by accumulating the product
+    cumulative_returns = []
+    cumulative_return = 1.0  # Start with 1 (100%)
+    
+    for ret in returns:
+        cumulative_return *= (1 + ret)  # Multiply by (1 + return) for each day
+        cumulative_returns.append(cumulative_return - 1)  # Convert to return percentage
+    
+    # Convert to percentage for display
+    cumulative_returns_pct = [r * 100 for r in cumulative_returns]
+    
+    # Create enhanced plotly figure
+    fig = go.Figure()
+    
+    # Add trace with cumulative returns
+    fig.add_trace(go.Scatter(
+        x=dates,
+        y=cumulative_returns_pct,
+        mode='lines+markers',  # Add markers for hover effect
+        name='Cumulative Return',
+        line=dict(
+            color='#2E5BFF',
+            width=2
+        ),
+        marker=dict(
+            size=6,
+            color='#2E5BFF',
+            opacity=0,  # Hide markers by default
+            line=dict(
+                color='white',
+                width=1
+            )
+        ),
+        fill='tonexty',
+        fillcolor='rgba(46, 91, 255, 0.1)',
+        hovertemplate='%{x}<br>Return: %{y:.2f}%<extra></extra>'  # Added date back to hover template
+    ))
+    
+    # Enhanced layout
+    fig.update_layout(
+        showlegend=False,
+        margin=dict(l=40, r=40, t=20, b=40),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        xaxis=dict(
+            showgrid=False,  # Remove grid
+            showline=True,
+            linecolor='rgba(0,0,0,0.2)',
+            linewidth=1,
+            title=dict(
+                text='Date',
+                font=dict(
+                    family='Inter',
+                    size=12,
+                    color='rgba(0,0,0,0.6)'
+                )
+            ),
+            tickfont=dict(
+                family='Inter',
+                size=10,
+                color='rgba(0,0,0,0.6)'
+            )
+        ),
+        yaxis=dict(
+            showgrid=False,  # Remove grid
+            showline=True,
+            linecolor='rgba(0,0,0,0.2)',
+            linewidth=1,
+            title=dict(
+                text='Cumulative Return',
+                font=dict(
+                    family='Inter',
+                    size=12,
+                    color='rgba(0,0,0,0.6)'
+                )
+            ),
+            ticksuffix='%',
+            tickfont=dict(
+                family='Inter',
+                size=10,
+                color='rgba(0,0,0,0.6)'
+            ),
+            zeroline=False,  # Remove zero line
+            range=[min(cumulative_returns_pct) * 1.1, max(cumulative_returns_pct) * 1.1]
+        ),
+        # Hover configuration
+        hovermode='closest',  # Show hover only near points
+        hoverlabel=dict(
+            bgcolor='white',
+            font_size=12,
+            font_family="Inter"
+        ),
+        # Add subtle animations
+        transition_duration=500,
+        transition=dict(
+            duration=500,
+            easing='cubic-in-out'
+        ),
+        # Hover effects
+        hoverdistance=50,
+        spikedistance=-1  # Disable spike lines
+    )
+    
+    # Convert the figure to JSON for frontend
+    plot_json = fig.to_json()
+    
+    return render_template('view_risk_factor.html',
+                         risk_factor=risk_factor, 
+                         data=data,
+                         plot_json=plot_json)
 
 @app.route('/risk_factor/<int:id>/upload_data', methods=['GET', 'POST'])
 @login_required
@@ -1406,7 +1521,6 @@ def portfolio_strategy(id):
                              
     except Exception as e:
         # Log the error for debugging
-        print(f"Error in portfolio_strategy route: {str(e)}")
         flash('An unexpected error occurred', 'error')
         return redirect(url_for('get_portfolios'))
 
@@ -1577,7 +1691,6 @@ def portfolio_holdings(id):
                              total_strategic_weight=total_strategic_weight)
                              
     except Exception as e:
-        print(f"Error in portfolio_holdings route: {str(e)}")
         flash('An error occurred while loading the portfolio', 'error')
         return redirect(url_for('get_portfolios'))
 
@@ -1667,7 +1780,7 @@ def add_fund_to_portfolio(fund_id):
             
     except Exception as e:
         db.session.rollback()
-        print(f"Error adding fund to portfolio: {str(e)}")  # Log the error
+
         flash('An error occurred while adding the fund to portfolio', 'error')
         return redirect(url_for('get_funds'))
 

@@ -2,142 +2,175 @@
 
 {% block title %}{{ risk_factor.name }}{% endblock %}
 
+{% block head %}
+<style>
+    .table-responsive {
+        height: 200px;  /* Approximate height for 10 rows */
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+    
+    .table thead th {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+        box-shadow: 0 1px 0 rgba(0,0,0,0.1);  /* Adds a subtle shadow under the header */
+    }
+
+    .table tbody tr {
+        height: 40px;  /* Fixed height for each row */
+    }
+
+    .table.table-sm td {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="card main-card">
-        <div class="card-body">
-            <div class="row">
-                <!-- Left Card - Details -->
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h4 class="card-title mb-4">{{ risk_factor.name }}</h4>
-                            {% if risk_factor.description %}
-                            <p class="text-muted mb-4">{{ risk_factor.description }}</p>
-                            {% endif %}
-                            <div class="d-grid gap-2">
-                                <a href="{{ url_for('upload_risk_factor_data', id=risk_factor.id) }}" class="btn btn-primary">
-                                    <i class="fas fa-upload me-2"></i>Upload Data
-                                </a>
-                                <a href="{{ url_for('get_risk_factors') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i>Back to Risk Factors
-                                </a>
-                            </div>
+    <!-- Header Section -->
+    <div class="refined-header">
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">Risk Factor Analysis</h1>
+                <h2 class="portfolio-subtitle">{{ risk_factor.name }}</h2>
+            </div>
+        
+        </div>
+    </div>
+
+
+    <!-- Main Content Card -->
+    <div class="card card-strategy">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-chart-area me-2 text-primary"></i>
+                <h5 class="card-title mb-0">Return Overview</h5>
+            </div>
+        </div>
+
+        {% if risk_factor.description %}
+        <div class="card-header bg-light border-bottom">
+            <p class="text-muted mb-0">{{ risk_factor.description }}</p>
+        </div>
+        {% endif %}
+
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <!-- Graph Section -->
+                <div class="col-md-7 border-end">
+                    <div class="p-4">
+                        {% if data %}
+                        <div id="performanceChart" style="width:100%; height:350px;"></div>
+                        {% else %}
+                        <div class="alert alert-info m-0">
+                            <i class="fas fa-info-circle me-2"></i>No data available for visualization.
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <!-- Right Card - Data Table -->
-                <div class="col-md-8">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title text-muted mb-3">Performance Data</h5>
+                <!-- Table Section -->
+                <div class="col-md-5">
+                    <div class="p-4">
+                        <div class="table-responsive" style="height: 350px;">
                             {% if data %}
-                            <div class="table-responsive">
-                                <table class="table table-hover table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th class="text-end">Daily Return</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for row in data %}
-                                        <tr>
-                                            <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
-                                            <td class="text-end">{{ "%.4f"|format(row.daily_return) }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <table class="table table-hover table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th class="text-end">Daily Return (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in data %}
+                                    <tr>
+                                        <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+                                        <td class="text-end">{{ "%.4f"|format(row.daily_return) }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                             {% else %}
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>No performance data available. Use the Upload button to add data.
+                            <div class="alert alert-info m-0">
+                                <i class="fas fa-info-circle me-2"></i>No performance data available.
                             </div>
                             {% endif %}
                         </div>
                     </div>
                 </div>
+                <hr class="my-4" style="opacity: 0.1;">
+                
+                  
+                </table>
+                <div class="ms-auto text-end" style="padding-bottom: 1cm; padding-right: 0.7cm;">
+                    <a href="{{ url_for('upload_risk_factor_data', id=risk_factor.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-upload me-2"></i>Upload Data
+                    </a>
+        
+
             </div>
         </div>
     </div>
 </div>
 
-<style>
-:root {
-    --border-color: #dee2e6;
-    --light-bg: #f8f9fa;
-    --text-color: #212529;
-    --text-muted: #6c757d;
-}
+<!-- Footer Separator -->
+<div class="footer-separator">
+    <div class="separator-line"></div>
+</div>
 
-.main-card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    margin-top: 1rem;
-}
+{% endblock %}
 
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
 
-.table-responsive {
-    max-height: 350px;
-    height: 350px;
-    overflow-y: auto;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-}
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 
-.table {
-    margin-bottom: 0;
-    width: 100%;
-}
+{% if data %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        var chartData = JSON.parse('{{ plot_json | safe }}');
+        if (chartData) {
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
+            
+            Plotly.newPlot('performanceChart', chartData.data, chartData.layout, config);
 
-.table thead th {
-    position: sticky;
-    top: 0;
-    background-color: var(--light-bg);
-    border-bottom: 2px solid var(--border-color);
-    font-weight: 600;
-    font-size: 0.85rem;
-    padding: 0.5rem 0.75rem;
-    z-index: 1;
-}
+            // Make chart responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    Plotly.Plots.resize('performanceChart');
+                }, 100);
+            });
+        }
+    } catch (error) {
+        console.error('Error creating chart:', error);
+    }
+});
+</script>
+{% endif %}
 
-.table tbody td {
-    padding: 0.35rem 0.75rem;
-    font-size: 0.85rem;
-    vertical-align: middle;
-}
+{% endblock %}
 
-.table tbody tr:hover {
-    background-color: var(--light-bg);
-}
-
-.alert-info {
-    background-color: #e8f4f8;
-    color: var(--text-color);
-    border: none;
-    border-radius: 8px;
-}
-
-.btn-secondary {
-    background-color: var(--light-bg) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-color) !important;
-}
-
-.btn-secondary:hover {
-    background-color: var(--border-color) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-color) !important;
-}
-
-.d-grid {
-    gap: 0.5rem;
-}
-</style>
-{% endblock %} 
