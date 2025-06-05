@@ -138,8 +138,8 @@
                 </table>
             </div>
             <div class="text-end mt-4">
-                <a href="{{ url_for('get_funds') }}" class="add-holding-link" style="font-size: 1rem;">
-                    Add new holding from funds table
+                <a href="{{ url_for('get_funds') }}" class="beautiful-link" style="font-size: 1rem;">
+                    <i class="fas fa-plus me-2"></i>Add new fund from funds table
                 </a>
             </div>
             {% else %}
@@ -356,26 +356,6 @@
     padding: 0.25rem 0.25rem !important;
     font-weight: 300;
     height: 27px;
-}
-
-/* Add holding link styling */
-.add-holding-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 200;
-    transition: all 0.2s ease;
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-}
-
-.add-holding-link:hover {
-    color: var(--primary-color);
-    transform: translateX(2px);
-}
-
-.add-holding-link i {
-    transition: transform 0.2s ease;
 }
 
 </style>

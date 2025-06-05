@@ -28,7 +28,7 @@
 
         <!-- Asset Allocation Card -->
         <div class="col-md-6">
-            <div class="card h-100">
+            <div class="card card-strategy h-100">
                 <div class="card-body">
                     <h5 class="card-title mb-3">
                         <i class="fas fa-cubes me-2 text-primary"></i>Asset Allocation
@@ -42,7 +42,7 @@
 
         <!-- Strategy Description Card -->
         <div class="col-md-6">
-            <div class="card h-100">
+            <div class="card card-strategy h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="card-title mb-0">
@@ -76,7 +76,7 @@
     </div>
 
     <!-- Strategy Card -->
-    <div class="card">
+    <div class="card card-strategy">
         <div class="card-header">
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
@@ -88,7 +88,7 @@
         <div class="card-body" style="padding: 30px 20px 20px 20px;">
             {% if holdings %}
             <div class="table-responsive">
-                <table class="table table-hover mb-0" id="holdingsTable">
+                <table class="table table-strategy table-hover mb-0" id="holdingsTable">
                     <thead>
                         <tr>
                             <th style="width: 40%" class="text-start">Fund Name</th>
@@ -98,21 +98,21 @@
                     <tbody>
                         {% for asset_class, holdings_list in holdings_by_asset_class.items() %}
                         <!-- Asset Class Header Row -->
-                        <tr class="asset-class-header">
-                            <td class="asset-class-title">
+                        <tr class="table-strategy-group">
+                            <td class="table-strategy-group-title">
                                 <strong><i class="fas fa-layer-group me-2"></i>{{ asset_class }}</strong>
                             </td>
-                            <td class="asset-class-title text-end">
+                            <td class="table-strategy-group-title text-end">
                                 <strong>{{ "%.1f"|format(asset_class_strategic_sums[asset_class]) }}%</strong>
                             </td>
                         </tr>
                         
                         <!-- Holdings for this Asset Class -->
                         {% for holding in holdings_list %}
-                        <tr class="holding-row">
+                        <tr class="table-strategy-row">
                             <td class="text-start">{{ holding.fund.fund_name }}</td>
                             <td class="text-end">
-                                <span class="strategic-weight-cell" 
+                                <span class="table-strategy-editable" 
                                       data-bs-toggle="modal" 
                                       data-bs-target="#editWeightModal"
                                       data-holding-id="{{ holding.id }}"
@@ -126,11 +126,11 @@
                         {% endfor %}
                         
                         <!-- Sum Row -->
-                        <tr class="sum-row">
-                            <td class="asset-class-title">
+                        <tr class="table-strategy-sum">
+                            <td class="table-strategy-group-title">
                                 <strong><i class="fas fa-calculator me-2"></i>Sum</strong>
                             </td>
-                            <td class="asset-class-title text-end">
+                            <td class="table-strategy-group-title text-end">
                                 <strong>{{ "%.1f"|format(total_strategic_weight) }}%</strong>
                             </td>
                         </tr>
@@ -138,7 +138,7 @@
                 </table>
             </div>
             <div class="text-end mt-4">
-                <a href="{{ url_for('get_funds') }}" class="add-holding-link">
+                <a href="{{ url_for('get_funds') }}" class="beautiful-link">
                     <i class="fas fa-plus me-2"></i>Add new fund from funds table
                 </a>
             </div>
@@ -155,6 +155,11 @@
             {% endif %}
         </div>
     </div>
+</div>
+
+<!-- Footer Separator -->
+<div class="footer-separator">
+    <div class="separator-line"></div>
 </div>
 
 <!-- Edit Weight Modal -->
@@ -188,188 +193,20 @@
     </div>
 </div>
 
-<!-- Footer Separator -->
-<div class="footer-separator">
-    <div class="separator-line"></div>
-</div>
-
 <style>
-/* Header styling */
-.header-section {
-    padding: 2.5rem 0;
-    margin-bottom: 2rem;
-    position: relative;
-    background: linear-gradient(120deg, var(--primary-color) 0%, #4a90e2 100%);
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.header-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(255,255,255,0.05)' fill-rule='evenodd'/%3E%3C/svg%3E");
-    opacity: 0.8;
-}
-
-.header-content {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    padding: 0 2rem;
-}
-
-.portfolio-badge {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 1.5rem;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.portfolio-badge:hover {
-    transform: scale(1.05);
-    background: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-.portfolio-badge i {
-    font-size: 1.8rem;
-    color: white;
-    transition: transform 0.3s ease;
-}
-
-.portfolio-badge:hover i {
-    transform: scale(1.1);
-}
-
-.header-text {
-    color: white;
-}
-
-.portfolio-name {
-    font-size: 2rem;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.5px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.strategy-label {
-    display: flex;
-    align-items: center;
-    margin-top: 0.5rem;
-    font-size: 1.1rem;
-    opacity: 0.9;
-}
-
-.strategy-label i {
-    margin-right: 0.5rem;
-    font-size: 1rem;
-}
-
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-}
-
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.table th {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-bottom: 2px solid var(--border-color);
-    font-weight: 600;
-    padding: 0.5rem 0.5rem;
-    height: 38px;
-    color: var(--text-color);
-}
-
-.table td {
-    padding: 0.5rem 0.5rem;
-    vertical-align: middle;
-    height: 38px;
-    font-size: 0.9rem;
-}
-
-/* Asset Class Header Styling */
-.asset-class-header {
-    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
-    border-top: 2px solid var(--border-color);
-}
-
-.asset-class-title {
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    padding: 0.5rem 0.5rem !important;
-    font-weight: 300;
-    height: 38px;
-}
-
-/* Holdings Row Styling */
-.holding-row {
-    transition: all 0.2s ease;
-}
-
-.holding-row:hover {
-    background-color: rgba(45, 125, 237, 0.04) !important;
-    transform: scale(1.002);
-    box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
-}
-
-/* Sum Row Styling */
-.sum-row {
-    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
-    border-top: 2px solid var(--border-color);
-}
-
-.strategic-weight-cell {
-    color: var(--primary-color);
-    cursor: pointer;
-    text-decoration: none;
-    transition: opacity 0.2s ease;
-}
-
-.strategic-weight-cell:hover {
-    opacity: 0.7;
-}
-
-/* Strategy Description Card Styling */
+    
+/* ==========================================================================
+   Other Component Styles
+   ========================================================================== */
+/* Strategy Description Styles */
 .strategy-description {
     font-size: 0.95rem;
     line-height: 1.6;
 }
 
-/* Allocation Chart Card Styling */
+/* Allocation Chart Styles */
 .allocation-chart {
-    height: 260px;  /* Increased height to match the chart */
+    height: 260px;
     width: 100%;
     display: flex;
     align-items: center;
@@ -384,163 +221,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    width: 100% !important;  /* Force full width */
-    height: 100% !important;  /* Force full height */
-}
-
-/* Add holding link styling */
-.add-holding-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    background-color: rgba(45, 125, 237, 0.1);
-}
-
-.add-holding-link:hover {
-    color: var(--primary-color);
-    background-color: rgba(45, 125, 237, 0.15);
-    transform: translateX(2px);
-}
-
-.add-holding-link i {
-    transition: transform 0.2s ease;
-}
-
-/* Section Dividers */
-.section-divider {
-    position: relative;
-    margin: 3rem 0;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transform: translateY(5px);
-    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
-}
-
-.section-divider.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.section-divider::before,
-.section-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #d0d0d0;
-    transform: scaleX(0.97);
-    transition: transform 0.7s ease-out;
-}
-
-.section-divider.visible::before,
-.section-divider.visible::after {
-    transform: scaleX(1);
-}
-
-.section-divider span {
-    color: #666;
-    font-size: 0.95rem;
-    font-weight: 500;
-    padding: 0 1.5rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-/* Footer Separator */
-.footer-separator {
-    margin-top: 5rem;
-    padding: 2rem 0;
-    position: relative;
-    width: 100%;
-}
-
-.separator-line {
-    height: 1px;
-    width: 100%;
-    background: linear-gradient(
-        to right,
-        rgba(0, 0, 0, 0),
-        rgba(0, 0, 0, 0.1) 20%,
-        rgba(0, 0, 0, 0.1) 80%,
-        rgba(0, 0, 0, 0)
-    );
-}
-
-/* Refined Header */
-.refined-header {
-    margin: 3.5rem 0 4rem;
-    position: relative;
-    padding-left: 2rem;
-    opacity: 0;
-    transition: opacity 0.6s ease-out;
-}
-
-.refined-header.visible {
-    opacity: 1;
-}
-
-.accent-line {
-    position: absolute;
-    left: 0;
-    top: 0.8rem;
-    width: 3px;
-    height: 3rem;
-    background: linear-gradient(to bottom, var(--primary-color), rgba(74, 144, 226, 0.2));
-    border-radius: 3px;
-}
-
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.title-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.page-title {
-    font-size: 2.4rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin: 0;
-    line-height: 1.1;
-}
-
-.portfolio-subtitle {
-    font-size: 1.2rem;
-    font-weight: 400;
-    color: #64748b;
-    margin: 0;
-    line-height: 1.2;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.subtle-dash {
-    color: #94a3b8;
-    font-weight: 300;
-    letter-spacing: -1px;
-}
-
-.header-decoration {
-    font-size: 2.8rem;
-    color: rgba(74, 144, 226, 0.15);
-    margin-right: 1rem;
-}
-
-.header-decoration i {
-    transform: rotate(-10deg);
+    width: 100% !important;
+    height: 100% !important;
 }
 </style>
 

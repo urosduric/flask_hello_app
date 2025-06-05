@@ -5,23 +5,29 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="header-section mb-4">
-        <div class="d-flex flex-column">
-            <h2 class="main-title">Funds</h2>
-            <h4 class="subtitle">Manage your investment funds</h4>
+    <div class="refined-header">
+        <div class="accent-line"></div>
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">Funds</h1>
+                <h2 class="portfolio-subtitle">
+                    Manage your investments
+                </h2>
+            </div>
+            
         </div>
     </div>
 
-    <div class="card">
+    <div class="section-divider">
+        <span> OVERVIEW</span>
+    </div>
+
+    <div class="card card-strategy mb-4">
         <div class="card-header">
             <div class="d-flex align-items-center">
                 <i class="fas fa-money-bill-wave me-2 text-primary"></i>
-                <h5 class="card-title mb-0">Fund Management</h5>
-                <div class="ms-auto">
-                    <a href="{{ url_for('new_fund') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add Fund
-                    </a>
-                </div>
+                <h5 class="card-title mb-0">Available Funds</h5>
+               
             </div>
         </div>
         <div class="card-body" style="padding: 30px 20px 20px 20px;">
@@ -154,6 +160,11 @@
                                         <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
                                     </div>
                                 </div>
+                                <div class="ms-auto">
+                                    <a href="{{ url_for('new_fund') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus me-1"></i> Define your own fund
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -161,55 +172,15 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer Separator -->
+<div class="footer-separator">
+    <div class="separator-line"></div>
+</div>
 </div>
 
 <style>
-
-.header-section {
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
-
-
-.main-title {
-    font-size: 2.5rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.5px;
-}
-
-.subtitle {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 0;
-}
-
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-}
-
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-
+/* Table styles */
 .table {
     width: 100%;
     margin-bottom: 0;
@@ -274,8 +245,26 @@
     background-color: var(--light-bg);
 }
 
+.list-group-item.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
 .border-end {
     border-right: 1px solid var(--border-color) !important;
+}
+
+/* Adjust btn-outline-primary colors to match our theme */
+.btn-outline-primary {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
 }
 
 /* Pagination text styles */
@@ -327,95 +316,6 @@
     box-shadow: none;
 }
 
-/* Modal styles */
-.modal-content {
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.modal-header {
-    padding: 1.5rem 1.5rem 0.5rem;
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.modal-footer {
-    padding: 1rem 1.5rem 1.5rem;
-}
-
-.btn-close {
-    opacity: 0.5;
-}
-
-.btn-close:hover {
-    opacity: 0.75;
-}
-
-.modal .btn-light {
-    background-color: #f8f9fa;
-    border-color: #f8f9fa;
-    color: #6c757d;
-}
-
-.modal .btn-light:hover {
-    background-color: #e9ecef;
-    border-color: #e9ecef;
-    color: #495057;
-}
-
-.modal .btn-danger {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    padding: 0.5rem 1.5rem;
-}
-
-.modal .btn-danger:hover {
-    background-color: #bb2d3b;
-    border-color: #bb2d3b;
-}
-
-/* Flash message styles */
-#flashMessages {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1050;
-    min-width: 300px;
-}
-
-.flash-message {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    animation: slideIn 0.3s ease-out;
-}
-
-.flash-message.success {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.flash-message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
 /* Add styles for text truncation */
 .text-truncate {
     overflow: hidden;
@@ -423,19 +323,6 @@
     white-space: nowrap;
 }
 
-/* Header button styling */
-.card-header .btn {
-    font-size: 0.85rem;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.card-header .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
 </style>
 
 <script>
