@@ -2,26 +2,200 @@
 
 {% block title %}Benchmarks{% endblock %}
 
+{% block head %}
+{{ super() }}
+<style>
+    /* Table-specific styles */
+    .table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        height: 32px;
+        color: var(--text-color);
+    }
+    
+    .table td {
+        padding: 0.2rem 0.5rem;
+        vertical-align: middle;
+        height: 32px;
+    }
+    
+    .btn-group {
+        gap: 0;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.2rem 0.4rem;
+        width: 32px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-group .btn i {
+        font-size: 0.75rem;
+    }
+    
+    .btn-group .btn:first-child {
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+    
+    .btn-group .btn:last-child {
+        border-top-right-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+        border-right: none;
+    }
+    
+    .btn-sm {
+        font-size: 0.875rem;
+    }
+    
+    .list-group-item {
+        cursor: pointer;
+        padding: 0.2rem 1rem;
+        border-radius: 0;
+        font-size: 0.9rem;
+    }
+    
+    .list-group-item:hover:not(.active) {
+        background-color: var(--light-bg);
+    }
+    
+    .list-group-item.active {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+    
+    .border-end {
+        border-right: 1px solid var(--border-color) !important;
+    }
+    
+    /* Adjust btn-outline-primary colors to match our theme */
+    .btn-outline-primary {
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+    
+    .btn-outline-primary:hover,
+    .btn-outline-primary.active {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+        color: white;
+    }
+    
+    /* Pagination text styles */
+    .pagination-text {
+        font-size: 0.85rem;
+        color: rgba(0, 0, 0, 0.6);
+    }
+    
+    /* Pagination button styles */
+    #prevPage, #nextPage {
+        width: 88px;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    #prevPage:hover:not(:disabled), #nextPage:hover:not(:disabled) {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .table-container {
+        min-height: auto;
+        height: fit-content;
+        overflow: visible;
+        min-height: calc(7 * 33px + 40px + 60px); /* 7 rows + header + pagination */
+    }
+    
+    .table-responsive {
+        height: fit-content;
+        overflow: visible;
+        min-height: calc(7 * 33px + 40px); /* 7 rows + header */
+    }
+    
+    /* Pagination container */
+    .d-flex.justify-content-between {
+        min-height: 60px; /* Fixed height for pagination area */
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Fund type filter styles */
+    .btn-group .btn-outline-primary:focus {
+        box-shadow: none;
+    }
+    
+    .btn-group .btn-outline-primary.active {
+        box-shadow: none;
+    }
+    
+    /* Add styles for text truncation */
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    
+    /* Search field styling */
+    .input-group {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .input-group .input-group-text {
+        background-color: #f8f9fa;
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        color: #6c757d;
+    }
+    
+    .input-group .form-control {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    
+    </style>
+
+{% endblock %}
+
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="header-section mb-4">
-        <div class="d-flex flex-column">
-            <h2 class="main-title">Benchmarks</h2>
-            <h4 class="subtitle">Add more allocation details to your funds</h4>
+    <div class="refined-header">
+        <div class="accent-line"></div>
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">Benchmarks</h1>
+                <h2 class="portfolio-subtitle">
+                    Add allocation details to your funds
+                </h2>
+            </div>
         </div>
     </div>
 
-    <div class="card">
+    <div class="section-divider">
+        <span>OVERVIEW</span>
+    </div>
+
+    <div class="card card-strategy mb-4">
         <div class="card-header">
             <div class="d-flex align-items-center">
                 <i class="fas fa-chart-bar me-2 text-primary"></i>
-                <h5 class="card-title mb-0">Benchmark Management</h5>
-                <div class="ms-auto">
-                    <a href="{{ url_for('new_benchmark') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add Benchmark
-                    </a>
-                </div>
+                <h5 class="card-title mb-0">Available Benchmarks</h5>
             </div>
         </div>
         <div class="card-body" style="padding: 30px 20px 20px 20px;">
@@ -136,6 +310,15 @@
                                         <button type="button" class="btn btn-outline-primary" id="nextPage" disabled>Next</button>
                                     </div>
                                 </div>
+
+                                <hr class="my-4" style="opacity: 0.1;">
+
+                                <div class="ms-auto">
+                                    <a href="{{ url_for('new_benchmark') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus me-1"></i>Define new benchmark
+                                    </a>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -143,279 +326,113 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer Separator -->
+    <div class="footer-separator">
+        <div class="separator-line"></div>
+    </div>
 </div>
 
-<style>
+{% endblock %} 
 
-.header-section {
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
-
-.main-title {
-    font-size: 2.5rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.5px;
-}
-
-.subtitle {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 0;
-}
-
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-}
-
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-
-.table {
-    width: 100%;
-    margin-bottom: 0;
-}
-
-.table th {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-bottom: 2px solid var(--border-color);
-    font-weight: 600;
-    padding: 0.2rem 0.5rem;
-    height: 32px;
-    color: var(--text-color);
-}
-
-.table td {
-    padding: 0.2rem 0.5rem;
-    vertical-align: middle;
-    height: 32px;
-}
-
-.btn-group {
-    gap: 0;
-}
-
-.btn-group .btn {
-    border-radius: 0;
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.2rem 0.4rem;
-    width: 32px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-group .btn i {
-    font-size: 0.75rem;
-}
-
-.btn-group .btn:first-child {
-    border-top-left-radius: 0.25rem;
-    border-bottom-left-radius: 0.25rem;
-}
-
-.btn-group .btn:last-child {
-    border-top-right-radius: 0.25rem;
-    border-bottom-right-radius: 0.25rem;
-    border-right: none;
-}
-
-.btn-sm {
-    font-size: 0.875rem;
-}
-
-.list-group-item {
-    cursor: pointer;
-    padding: 0.2rem 1rem;
-    border-radius: 0;
-}
-
-.list-group-item:hover:not(.active) {
-    background-color: var(--light-bg);
-}
-
-.border-end {
-    border-right: 1px solid var(--border-color) !important;
-}
-
-/* Pagination text styles */
-.pagination-text {
-    font-size: 0.85rem;
-    color: rgba(0, 0, 0, 0.6);
-}
-
-/* Pagination button styles */
-#prevPage, #nextPage {
-    width: 88px;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    color: var(--primary-color);
-    font-weight: 500;
-}
-
-#prevPage:hover:not(:disabled), #nextPage:hover:not(:disabled) {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.table-container {
-    min-height: auto;
-    height: fit-content;
-    overflow: visible;
-    min-height: calc(7 * 33px + 40px + 60px); /* 7 rows + header + pagination */
-}
-
-.table-responsive {
-    height: fit-content;
-    overflow: visible;
-    min-height: calc(7 * 33px + 40px); /* 7 rows + header */
-}
-
-/* Pagination container */
-.d-flex.justify-content-between {
-    min-height: 60px; /* Fixed height for pagination area */
-    display: flex;
-    align-items: center;
-}
-
-/* Add styles for text truncation */
-.text-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Header button styling */
-.card-header .btn {
-    font-size: 0.85rem;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.card-header .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-</style>
+{% block scripts %}
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const table = document.getElementById('benchmarksTable');
-    const searchInput = document.getElementById('searchInput');
-    const assetClassButtons = document.querySelectorAll('[data-asset-class]');
-    const benchmarkTypeButtons = document.querySelectorAll('[data-benchmark-type]');
-    const prevPageBtn = document.getElementById('prevPage');
-    const nextPageBtn = document.getElementById('nextPage');
-    const showingCount = document.getElementById('showingCount');
-    const totalCount = document.getElementById('totalCount');
-    
-    let currentPage = 1;
-    const rowsPerPage = 7;
-    let filteredRows = Array.from(table.querySelectorAll('tbody tr'));
-    
-    function updateTable() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const selectedAssetClass = document.querySelector('[data-asset-class].active').dataset.assetClass;
-        const selectedBenchmarkType = document.querySelector('[data-benchmark-type].active').dataset.benchmarkType;
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('benchmarksTable');
+        const searchInput = document.getElementById('searchInput');
+        const assetClassButtons = document.querySelectorAll('[data-asset-class]');
+        const benchmarkTypeButtons = document.querySelectorAll('[data-benchmark-type]');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const showingCount = document.getElementById('showingCount');
+        const totalCount = document.getElementById('totalCount');
         
-        filteredRows = Array.from(table.querySelectorAll('tbody tr')).filter(row => {
-            const name = row.cells[0].textContent.toLowerCase();
-            const assetClass = row.cells[1].textContent.trim();
-            const isGeneric = row.querySelector('.fa-globe') !== null;
+        let currentPage = 1;
+        const rowsPerPage = 7;
+        let filteredRows = Array.from(table.querySelectorAll('tbody tr'));
+        
+        function updateTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedAssetClass = document.querySelector('[data-asset-class].active').dataset.assetClass;
+            const selectedBenchmarkType = document.querySelector('[data-benchmark-type].active').dataset.benchmarkType;
             
-            const matchesSearch = name.includes(searchTerm);
-            const matchesAssetClass = selectedAssetClass === 'all' || assetClass === selectedAssetClass;
-            const matchesBenchmarkType = selectedBenchmarkType === 'all' || 
-                                       (selectedBenchmarkType === 'generic' && isGeneric) ||
-                                       (selectedBenchmarkType === 'user' && !isGeneric);
+            filteredRows = Array.from(table.querySelectorAll('tbody tr')).filter(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const assetClass = row.cells[1].textContent.trim();
+                const isGeneric = row.querySelector('.fa-globe') !== null;
+                
+                const matchesSearch = name.includes(searchTerm);
+                const matchesAssetClass = selectedAssetClass === 'all' || assetClass === selectedAssetClass;
+                const matchesBenchmarkType = selectedBenchmarkType === 'all' || 
+                                           (selectedBenchmarkType === 'generic' && isGeneric) ||
+                                           (selectedBenchmarkType === 'user' && !isGeneric);
+                
+                return matchesSearch && matchesAssetClass && matchesBenchmarkType;
+            });
             
-            return matchesSearch && matchesAssetClass && matchesBenchmarkType;
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedRows = filteredRows.slice(start, end);
+            
+            // Hide all rows
+            table.querySelectorAll('tbody tr').forEach(row => row.style.display = 'none');
+            
+            // Show filtered rows
+            paginatedRows.forEach(row => row.style.display = '');
+            
+            // Update pagination
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
+            
+            // Update counts
+            showingCount.textContent = paginatedRows.length;
+            totalCount.textContent = filteredRows.length;
+        }
+        
+        // Event listeners
+        searchInput.addEventListener('input', () => {
+            currentPage = 1;
+            updateTable();
         });
         
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        const paginatedRows = filteredRows.slice(start, end);
-        
-        // Hide all rows
-        table.querySelectorAll('tbody tr').forEach(row => row.style.display = 'none');
-        
-        // Show filtered rows
-        paginatedRows.forEach(row => row.style.display = '');
-        
-        // Update pagination
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages;
-        
-        // Update counts
-        showingCount.textContent = paginatedRows.length;
-        totalCount.textContent = filteredRows.length;
-    }
+        assetClassButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                assetClassButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentPage = 1;
+                updateTable();
+            });
+        });
     
-    // Event listeners
-    searchInput.addEventListener('input', () => {
-        currentPage = 1;
+        benchmarkTypeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                benchmarkTypeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentPage = 1;
+                updateTable();
+            });
+        });
+        
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateTable();
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateTable();
+            }
+        });
+        
+        // Initial table update
         updateTable();
     });
-    
-    assetClassButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            assetClassButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            currentPage = 1;
-            updateTable();
-        });
-    });
+    </script>
 
-    benchmarkTypeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            benchmarkTypeButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            currentPage = 1;
-            updateTable();
-        });
-    });
-    
-    prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            updateTable();
-        }
-    });
-    
-    nextPageBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            updateTable();
-        }
-    });
-    
-    // Initial table update
-    updateTable();
-});
-</script>
-{% endblock %} 
+{% endblock %}  

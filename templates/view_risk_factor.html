@@ -5,7 +5,7 @@
 {% block head %}
 <style>
     .table-responsive {
-        height: 200px;  /* Approximate height for 10 rows */
+        height: 375px;  /* Reduced from 500px */
         overflow-y: auto;
         scrollbar-width: thin;
     }
@@ -32,12 +32,7 @@
     }
 
     .table tbody tr {
-        height: 40px;  /* Fixed height for each row */
-    }
-
-    .table.table-sm td {
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
+        height: 20px;  /* Fixed height for each row */
     }
 </style>
 {% endblock %}

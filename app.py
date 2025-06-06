@@ -879,6 +879,13 @@ def view_risk_factor(id):
     risk_factor = RiskFactor.query.get_or_404(id)
     data = RiskFactorData.query.filter_by(risk_factor_id=id).order_by(RiskFactorData.date).all()
     
+    # If no data exists, return template without plot
+    if not data:
+        return render_template('view_risk_factor.html',
+                             risk_factor=risk_factor, 
+                             data=data,
+                             plot_json=None)
+    
     # Prepare data for cumulative returns calculation
     dates = [d.date.strftime('%Y-%m-%d') for d in data]
     returns = [float(d.daily_return)/100 for d in data]  # Convert percentage to decimal

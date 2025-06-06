@@ -2,6 +2,45 @@
 
 {% block title %}{{ portfolio.portfolio_name }} - Strategy{% endblock %}
 
+{% block head %}
+{{ super() }}
+
+<style>
+    
+    /* ==========================================================================
+       Other Component Styles
+       ========================================================================== */
+    /* Strategy Description Styles */
+    .strategy-description {
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    
+    /* Allocation Chart Styles */
+    .allocation-chart {
+        height: 260px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    #chart {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    </style>
+    
+{% endblock %}
+
+
 {% block content %}
 <div class="container-fluid px-4">
     <div class="refined-header">
@@ -138,8 +177,8 @@
                 </table>
             </div>
             <div class="text-end mt-4">
-                <a href="{{ url_for('get_funds') }}" class="beautiful-link">
-                    <i class="fas fa-plus me-2"></i>Add new fund from funds table
+                <a href="{{ url_for('get_funds') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-2"></i>Add new 
                 </a>
             </div>
             {% else %}
@@ -193,38 +232,9 @@
     </div>
 </div>
 
-<style>
-    
-/* ==========================================================================
-   Other Component Styles
-   ========================================================================== */
-/* Strategy Description Styles */
-.strategy-description {
-    font-size: 0.95rem;
-    line-height: 1.6;
-}
+{% endblock %}
 
-/* Allocation Chart Styles */
-.allocation-chart {
-    height: 260px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    position: relative;
-    overflow: hidden;
-}
-
-#chart {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100% !important;
-    height: 100% !important;
-}
-</style>
+{% block scripts %}
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>

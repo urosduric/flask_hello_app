@@ -2,6 +2,177 @@
 
 {% block title %}Funds{% endblock %}
 
+{% block head %}
+{{ super() }}
+
+<style>
+    /* Table styles */
+    .table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        height: 32px;
+        color: var(--text-color);
+    }
+    
+    .table td {
+        padding: 0.2rem 0.5rem;
+        vertical-align: middle;
+        height: 32px;
+    }
+    
+    .btn-group {
+        gap: 0;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.2rem 0.4rem;
+        width: 32px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-group .btn i {
+        font-size: 0.75rem;
+    }
+    
+    .btn-group .btn:first-child {
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+    
+    .btn-group .btn:last-child {
+        border-top-right-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+        border-right: none;
+    }
+    
+    .btn-sm {
+        font-size: 0.875rem;
+    }
+    
+    .list-group-item {
+        cursor: pointer;
+        padding: 0.2rem 1rem;
+        border-radius: 0;
+        font-size: 0.9rem;
+    }
+    
+    .list-group-item:hover:not(.active) {
+        background-color: var(--light-bg);
+    }
+    
+    .list-group-item.active {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+    
+    .border-end {
+        border-right: 1px solid var(--border-color) !important;
+    }
+    
+    /* Adjust btn-outline-primary colors to match our theme */
+    .btn-outline-primary {
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+    
+    .btn-outline-primary:hover,
+    .btn-outline-primary.active {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+        color: white;
+    }
+    
+    /* Pagination text styles */
+    .pagination-text {
+        font-size: 0.85rem;
+        color: rgba(0, 0, 0, 0.6);
+    }
+    
+    /* Pagination button styles */
+    #prevPage, #nextPage {
+        width: 88px;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    #prevPage:hover:not(:disabled), #nextPage:hover:not(:disabled) {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .table-container {
+        min-height: auto;
+        height: fit-content;
+        overflow: visible;
+        min-height: calc(7 * 33px + 40px + 60px); /* 7 rows + header + pagination */
+    }
+    
+    .table-responsive {
+        height: fit-content;
+        overflow: visible;
+        min-height: calc(7 * 33px + 40px); /* 7 rows + header */
+    }
+    
+    /* Pagination container */
+    .d-flex.justify-content-between {
+        min-height: 60px; /* Fixed height for pagination area */
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Fund type filter styles */
+    .btn-group .btn-outline-primary:focus {
+        box-shadow: none;
+    }
+    
+    .btn-group .btn-outline-primary.active {
+        box-shadow: none;
+    }
+    
+    /* Add styles for text truncation */
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    
+    /* Search field styling */
+    .input-group {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .input-group .input-group-text {
+        background-color: #f8f9fa;
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        color: #6c757d;
+    }
+    
+    .input-group .form-control {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    
+    
+    </style>   
+{% endblock %}
+
 
 {% block content %}
 <div class="container-fluid px-4">
@@ -181,171 +352,9 @@
 </div>
 </div>
 
-<style>
-/* Table styles */
-.table {
-    width: 100%;
-    margin-bottom: 0;
-}
+{% endblock %}
 
-.table th {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-bottom: 2px solid var(--border-color);
-    font-weight: 600;
-    padding: 0.2rem 0.5rem;
-    height: 32px;
-    color: var(--text-color);
-}
-
-.table td {
-    padding: 0.2rem 0.5rem;
-    vertical-align: middle;
-    height: 32px;
-}
-
-.btn-group {
-    gap: 0;
-}
-
-.btn-group .btn {
-    border-radius: 0;
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.2rem 0.4rem;
-    width: 32px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-group .btn i {
-    font-size: 0.75rem;
-}
-
-.btn-group .btn:first-child {
-    border-top-left-radius: 0.25rem;
-    border-bottom-left-radius: 0.25rem;
-}
-
-.btn-group .btn:last-child {
-    border-top-right-radius: 0.25rem;
-    border-bottom-right-radius: 0.25rem;
-    border-right: none;
-}
-
-.btn-sm {
-    font-size: 0.875rem;
-}
-
-.list-group-item {
-    cursor: pointer;
-    padding: 0.2rem 1rem;
-    border-radius: 0;
-}
-
-.list-group-item:hover:not(.active) {
-    background-color: var(--light-bg);
-}
-
-.list-group-item.active {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
-.border-end {
-    border-right: 1px solid var(--border-color) !important;
-}
-
-/* Adjust btn-outline-primary colors to match our theme */
-.btn-outline-primary {
-    color: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
-.btn-outline-primary:hover,
-.btn-outline-primary.active {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: white;
-}
-
-/* Pagination text styles */
-.pagination-text {
-    font-size: 0.85rem;
-    color: rgba(0, 0, 0, 0.6);
-}
-
-/* Pagination button styles */
-#prevPage, #nextPage {
-    width: 88px;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    color: var(--primary-color);
-    font-weight: 500;
-}
-
-#prevPage:hover:not(:disabled), #nextPage:hover:not(:disabled) {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.table-container {
-    min-height: auto;
-    height: fit-content;
-    overflow: visible;
-    min-height: calc(7 * 33px + 40px + 60px); /* 7 rows + header + pagination */
-}
-
-.table-responsive {
-    height: fit-content;
-    overflow: visible;
-    min-height: calc(7 * 33px + 40px); /* 7 rows + header */
-}
-
-/* Pagination container */
-.d-flex.justify-content-between {
-    min-height: 60px; /* Fixed height for pagination area */
-    display: flex;
-    align-items: center;
-}
-
-/* Fund type filter styles */
-.btn-group .btn-outline-primary:focus {
-    box-shadow: none;
-}
-
-.btn-group .btn-outline-primary.active {
-    box-shadow: none;
-}
-
-/* Add styles for text truncation */
-.text-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-
-/* Search field styling */
-.input-group {
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.input-group .input-group-text {
-    background-color: #f8f9fa;
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
-    color: #6c757d;
-}
-
-.input-group .form-control {
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-
-
-</style>
+{% block scripts %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

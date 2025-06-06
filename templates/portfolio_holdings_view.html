@@ -2,27 +2,137 @@
 
 {% block title %}{{ portfolio.portfolio_name }}{% endblock %}
 
+{% block head %}
+{{ super() }}
+
+<style>
+    .table th {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+        padding: 0.25rem 0.25rem;
+        height: 22px;
+        color: var(--text-color);
+    }
+    
+    .table td {
+        padding: 0.25rem 0.25rem;
+        vertical-align: middle;
+        height: 27px;
+        font-size: 0.9rem;
+    }
+    
+    /* Asset Class Header Styling */
+    .asset-class-header {
+        background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+        border-top: 2px solid var(--border-color);
+    }
+    
+    .asset-class-title {
+        font-size: 0.9rem;
+        color: var(--primary-color);
+        padding: 0.25rem 0.25rem !important;
+        font-weight: 300;
+        height: 27px;
+    }
+    
+    /* Holdings Row Styling */
+    .holding-row {
+        transition: all 0.2s ease;
+    }
+    
+    .holding-row:hover {
+        background-color: rgba(45, 125, 237, 0.04) !important;
+        transform: scale(1.002);
+        box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
+    }
+    
+    /* Price cell styling */
+    .price-cell-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .price-cell-link:hover {
+        opacity: 0.7;
+    }
+    
+    .price-cell-static {
+        color: inherit;
+    }
+    
+    /* Fund name cell styling */
+    .fund-name-cell {
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+    
+    .fund-name-cell:hover {
+        color: #000 !important;
+        font-weight: 500;
+    }
+    
+    /* Units cell styling */
+    .units-cell {
+        cursor: pointer;
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
+    
+    .units-cell:hover {
+        opacity: 0.7;
+    }
+    
+    /* Sum Row Styling */
+    .sum-row {
+        background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+        border-top: 2px solid var(--border-color);
+    }
+    
+    /* Table container */
+    .table-responsive {
+        height: fit-content;
+        overflow: visible;
+        min-height: calc(7 * 27px + 22px); /* 7 rows + header */
+    }
+    
+    /* Add styles for text truncation */
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    </style>
+    
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="header-section mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex flex-column">
-                <h2 class="main-title">Portfolio holdings</h2>
-                <h4 class="subtitle">
-                    <i class="fas fa-chart-pie me-2 text-primary small"></i>{{ portfolio.portfolio_name }}
-                </h4>
+<div class="container-fluid">
+    <div class="refined-header">
+        <div class="accent-line"></div>
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">Portfolio holdings</h1>
+                <h2 class="portfolio-subtitle">{{ portfolio.portfolio_name }}</h2>
+
             </div>
+            
         </div>
     </div>
 
+    <div class="section-divider">
+        <span>OVERVIEW</span>
+    </div>
+
     <!-- Holdings Card -->
-    <div class="card">
+    <div class="card card-strategy mb-4">
         <div class="card-header">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-chart-pie me-2 text-primary"></i>
-                    <h5 class="card-title mb-0">Portfolio Holdings</h5>
-                </div>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-chart-pie me-2 text-primary"></i>
+                <h5 class="card-title mb-0">Portfolio Holdings</h5>
             </div>
         </div>
         <div class="card-body" style="padding: 30px 20px 20px 20px;">
@@ -138,8 +248,8 @@
                 </table>
             </div>
             <div class="text-end mt-4">
-                <a href="{{ url_for('get_funds') }}" class="beautiful-link" style="font-size: 1rem;">
-                    <i class="fas fa-plus me-2"></i>Add new fund from funds table
+                <a href="{{ url_for('get_funds') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-2"></i>Add new
                 </a>
             </div>
             {% else %}
@@ -154,6 +264,11 @@
             </div>
             {% endif %}
         </div>
+    </div>
+
+    <!-- Footer Separator -->
+    <div class="footer-separator">
+        <div class="separator-line"></div>
     </div>
 </div>
 
@@ -219,146 +334,9 @@
     </div>
 </div>
 
-<style>
-/* Page-specific styling */
-.header-section {
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
+{% endblock %}
 
-.main-title {
-    font-size: 2.5rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.5px;
-}
-
-.subtitle {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 0;
-}
-
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-}
-
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.table th {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-bottom: 2px solid var(--border-color);
-    font-weight: 600;
-    padding: 0.25rem 0.25rem;
-    height: 22px;
-    color: var(--text-color);
-}
-
-.table td {
-    padding: 0.25rem 0.25rem;
-    vertical-align: middle;
-    height: 27px;
-    font-size: 0.9rem;
-
-}
-
-/* Asset Class Header Styling */
-.asset-class-header {
-    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
-    border-top: 2px solid var(--border-color);
-}
-
-.asset-class-title {
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    padding: 0.25rem 0.25rem !important;
-    font-weight: 300;
-    height: 27px;
-}
-
-/* Holdings Row Styling */
-.holding-row {
-    transition: all 0.2s ease;
-}
-
-.holding-row:hover {
-    background-color: rgba(45, 125, 237, 0.04) !important;
-    transform: scale(1.002);
-    box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
-}
-
-/* Price cell styling */
-.price-cell-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: opacity 0.2s ease;
-}
-
-.price-cell-link:hover {
-    opacity: 0.7;
-}
-
-.price-cell-static {
-    color: inherit;
-}
-
-/* Fund name cell styling */
-.fund-name-cell {
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.fund-name-cell:hover {
-    color: #000 !important;
-    font-weight: 500;
-}
-
-/* Units cell styling */
-.units-cell {
-    cursor: pointer;
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: opacity 0.2s ease;
-}
-
-.units-cell:hover {
-    opacity: 0.7;
-}
-
-/* Sum Row Styling */
-.sum-row {
-    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
-    border-top: 2px solid var(--border-color);
-}
-
-.sum-title {
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    padding: 0.25rem 0.25rem !important;
-    font-weight: 300;
-    height: 27px;
-}
-
-</style>
+{% block scripts %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
