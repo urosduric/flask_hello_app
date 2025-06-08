@@ -2,103 +2,199 @@
 
 {% block title %}Add New Portfolio{% endblock %}
 
+{% block head %}
+{{ super() }}
+
+<style>
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.input-group-text {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.form-control {
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 1rem;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+</style>
+
+{% endblock %}
+
+
+
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="header-section mb-4">
-        <div class="d-flex flex-column">
-            <h2 class="main-title">Add new portfolio</h2>
-            <h4 class="subtitle">Create a new portfolio to organize your investments</h4>
+    <div class="refined-header">
+        <div class="accent-line"></div>
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">New Portfolio</h1>
+                <h2 class="portfolio-subtitle">
+                    Create a new portfolio to organize your investments
+                </h2>
+            </div>
+            <div class="header-decoration">
+                <i class="fas fa-plus-circle"></i>
+            </div>
         </div>
     </div>
 
-    {% if error %}
-    <div class="alert alert-danger" role="alert">
-        {{ error | safe }}
+    <div class="section-divider">
+        <span>PORTFOLIO DETAILS</span>
     </div>
-    {% endif %}
 
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    <form method="POST" class="needs-validation" novalidate>
+        <div class="col-lg-8">
+            <div class="card card-strategy">
+                <div class="card-body p-4">
+                    <form method="POST" class="needs-validation" novalidate id="portfolioForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <label class="form-label">Portfolio Name</label>
-                                <input type="text" class="form-control" name="portfolio_name" maxlength="40" required>
-                                <div class="invalid-feedback">Portfolio name is required and must be 40 characters or less.</div>
-                                <div class="form-text">Maximum 40 characters</div>
+                        {% if error %}
+                        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                            {{ error | safe }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <label class="form-label">Portfolio Name <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-briefcase"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="portfolio_name" 
+                                       id="portfolioName"
+                                       maxlength="40" 
+                                       required
+                                       pattern="^[a-zA-Z0-9\s\-_\.]+$"
+                                       placeholder="Enter portfolio name">
+                                <div class="invalid-feedback">
+                                    Please enter a valid portfolio name (letters, numbers, spaces, hyphens, underscores, and dots only).
+                                </div>
+                            </div>
+                            <div class="form-text d-flex justify-content-between align-items-center mt-2">
+                                <span>Maximum 40 characters</span>
+                                <span id="charCount" class="text-muted">0/40</span>
                             </div>
                         </div>
 
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-primary">Create Portfolio</button>
+                        <div class="mb-4">
+                            <label class="form-label">Strategy Description</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-align-left"></i>
+                                </span>
+                                <textarea class="form-control" 
+                                          name="strategy_description" 
+                                          id="strategyDescription"
+                                          rows="3"
+                                          maxlength="500"
+                                          placeholder="Describe your investment strategy for this portfolio"></textarea>
+                            </div>
+                            <div class="form-text d-flex justify-content-between align-items-center mt-2">
+                                <span>Optional description</span>
+                                <span id="descCharCount" class="text-muted">0/500</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a href="{{ url_for('get_portfolios') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Portfolios
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create Portfolio
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+            <!-- Footer Separator -->
+<div class="footer-separator">
+    <div class="separator-line"></div>
+</div>
+</div>
 </div>
 
-<style>
-.header-section {
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
+{% endblock %}
 
-.main-title {
-    font-size: 2.5rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.5px;
-}
-
-.subtitle {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 0;
-}
-
-.card {
-    border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.form-label {
-    font-weight: 500;
-    color: var(--text-color);
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-}
-
-.form-control[readonly] {
-    background-color: #f8f9fa;
-    cursor: not-allowed;
-}
-</style>
-
+{% block scripts %}
 <script>
-// Form validation
-(function() {
-    'use strict';
-    var forms = document.querySelectorAll('.needs-validation');
-    Array.prototype.slice.call(forms).forEach(function(form) {
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        }, false);
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('portfolioForm');
+    const portfolioName = document.getElementById('portfolioName');
+    const charCount = document.getElementById('charCount');
+    const strategyDescription = document.getElementById('strategyDescription');
+    const descCharCount = document.getElementById('descCharCount');
+
+    // Portfolio name character counter
+    portfolioName.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = `${length}/40`;
+        
+        if (length > 40) {
+            charCount.classList.add('text-danger');
+        } else {
+            charCount.classList.remove('text-danger');
+        }
     });
-})();
+
+    // Strategy description character counter
+    strategyDescription.addEventListener('input', function() {
+        const length = this.value.length;
+        descCharCount.textContent = `${length}/500`;
+        
+        if (length > 500) {
+            descCharCount.classList.add('text-danger');
+        } else {
+            descCharCount.classList.remove('text-danger');
+        }
+    });
+
+    // Form validation
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // Additional custom validation
+        const portfolioNameValue = portfolioName.value.trim();
+        
+        if (portfolioNameValue.length === 0) {
+            portfolioName.setCustomValidity('Portfolio name is required');
+        } else if (portfolioNameValue.length > 40) {
+            portfolioName.setCustomValidity('Portfolio name must be 40 characters or less');
+        } else if (!/^[a-zA-Z0-9\s\-_\.]+$/.test(portfolioNameValue)) {
+            portfolioName.setCustomValidity('Portfolio name can only contain letters, numbers, spaces, hyphens, underscores, and dots');
+        } else {
+            portfolioName.setCustomValidity('');
+        }
+
+        form.classList.add('was-validated');
+    });
+
+    // Clear custom validity on input
+    portfolioName.addEventListener('input', function() {
+        this.setCustomValidity('');
+    });
+});
 </script>
 {% endblock %} 

@@ -17,6 +17,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 import json
 import numpy as np
+import re
+from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
@@ -1105,6 +1107,7 @@ def get_portfolios():
 def new_portfolio():
     if request.method == 'POST':
         portfolio_name = request.form.get('portfolio_name', '').strip()
+        strategy_description = request.form.get('strategy_description', '').strip()
         
         # Validate portfolio name
         if not portfolio_name:
@@ -1112,6 +1115,16 @@ def new_portfolio():
             
         if len(portfolio_name) > 40:
             return render_template('new_portfolio.html', error='Portfolio name must be 40 characters or less')
+            
+        # Validate portfolio name characters
+        if not re.match(r'^[a-zA-Z0-9\s\-_\.]+$', portfolio_name):
+            return render_template('new_portfolio.html', 
+                error='Portfolio name can only contain letters, numbers, spaces, hyphens, underscores, and dots')
+        
+        # Validate strategy description length if provided
+        if strategy_description and len(strategy_description) > 500:
+            return render_template('new_portfolio.html', 
+                error='Strategy description must be 500 characters or less')
         
         # Check if user already has a portfolio with this name
         existing_portfolio = Portfolio.query.filter_by(
@@ -1120,24 +1133,52 @@ def new_portfolio():
         ).first()
         
         if existing_portfolio:
-            return render_template('new_portfolio.html', error='You already have a portfolio with this name')
+            return render_template('new_portfolio.html', 
+                error='You already have a portfolio with this name')
             
         try:
+            # Start transaction
+            db.session.begin_nested()
+            
             new_portfolio = Portfolio(
                 portfolio_name=portfolio_name,
                 user_id=current_user.id,
                 is_default=0,  # Explicitly set to 0 (not default portfolio)
                 paid_in=0.0,   # Explicitly set to 0.0
+                strategy_description=strategy_description if strategy_description else None,
                 created_at=datetime.utcnow()  # Explicitly set creation time
             )
+            
+            # Validate the portfolio object
+            if not all([
+                new_portfolio.portfolio_name,
+                new_portfolio.user_id,
+                isinstance(new_portfolio.is_default, int),
+                isinstance(new_portfolio.paid_in, float),
+                new_portfolio.created_at
+            ]):
+                raise ValueError("Invalid portfolio data")
+            
             db.session.add(new_portfolio)
             db.session.commit()
             flash('Portfolio created successfully!', 'success')
             return redirect(url_for('get_portfolios'))
+            
+        except ValueError as ve:
+            db.session.rollback()
+            flash('Invalid portfolio data. Please check your input.', 'error')
+            return render_template('new_portfolio.html', error=str(ve))
+        except IntegrityError:
+            db.session.rollback()
+            flash('A portfolio with this name already exists.', 'error')
+            return render_template('new_portfolio.html', 
+                error='You already have a portfolio with this name')
         except Exception as e:
             db.session.rollback()
+            app.logger.error(f'Error creating portfolio: {str(e)}')
             flash('An error occurred while creating the portfolio. Please try again.', 'error')
-            return render_template('new_portfolio.html', error='An error occurred. Please try again.')
+            return render_template('new_portfolio.html', 
+                error='An unexpected error occurred. Please try again.')
     
     return render_template('new_portfolio.html')
 

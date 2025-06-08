@@ -34,7 +34,7 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            {% for portfolio in current_user.portfolios %}
+                            {% for portfolio in current_user.portfolios|sort(attribute='id') %}
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('view_portfolio', id=portfolio.id) }}">
                                     <i class="fas fa-chart-pie"></i>{{ portfolio.portfolio_name }}
@@ -43,7 +43,7 @@
                             {% endfor %}
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('new_portfolio') }}">
+                                <a class="dropdown-item" href="{{ url_for('get_portfolios') }}">
                                     <i class="fas fa-sliders-h"></i>Portfolios setup
                                 </a>
                             </li>
@@ -67,17 +67,7 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="simulationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-chart-line me-1"></i>Simulations
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="simulationsDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-random me-2"></i>Monte Carlo</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-history me-2"></i>Historical</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-project-diagram me-2"></i>Scenario Analysis</a></li>
-                        </ul>
-                    </li>
-                    
+                   
                     {% if current_user.is_admin() %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
