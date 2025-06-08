@@ -2,33 +2,145 @@
 
 {% block title %}{{ portfolio.portfolio_name }}{% endblock %}
 
+{% block head %}
+{{ super() }}
+<style>
+    .table th {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+        padding: 0.25rem 0.25rem;
+        height: 37px;
+        color: var(--text-color);
+    }
+    
+    .table td {
+        padding: 0.25rem 0.25rem;
+        vertical-align: middle;
+        height: 37px;
+        font-size: 0.9rem;
+    }
+    
+    /* Asset Class Header Styling */
+    .asset-class-header {
+        background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+        border-top: 2px solid var(--border-color);
+    }
+    
+    .asset-class-title {
+        font-size: 0.9rem;
+        color: var(--primary-color);
+        padding: 0.25rem 0.25rem !important;
+        font-weight: 300;
+        height: 27px;
+    }
+    
+    /* Holdings Row Styling */
+    .holding-row {
+        transition: all 0.2s ease;
+    }
+    
+    .holding-row:hover {
+        background-color: rgba(45, 125, 237, 0.04) !important;
+        transform: scale(1.002);
+        box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
+    }
+    
+    /* Price styling */
+    .price-cell {
+        position: relative;
+    }
+    
+    .price-cell.myprice-text {
+        cursor: pointer;
+    }
+    
+    .myprice-text {
+        color: var(--primary-color) !important;
+        font-weight: 500;
+    }
+    
+    /* Sum Row Styling */
+    .sum-row {
+        background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+        border-top: 2px solid var(--border-color);
+    }
+    
+    .sum-title {
+        font-size: 0.9rem;
+        color: var(--primary-color);
+        padding: 0.25rem 0.25rem !important;
+        font-weight: 300;
+        height: 27px;
+    }
+    
+    /* Fund name cell styling */
+    .fund-name-cell {
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+    
+    .fund-name-cell:hover {
+        color: #000 !important;
+        font-weight: 500;
+    }
+    
+    /* Difference bar styling */
+    .diff-bar-container,
+    .diff-bar,
+    .holding-bar {
+        display: none;
+    }
+    
+    .diff-value {
+        font-weight: 500;
+    }
+    
+    .asset-class-header .diff-value,
+    .sum-row .diff-value {
+        font-weight: 500;
+    }
+    
+    .asset-class-header .diff-value.text-success,
+    .sum-row .diff-value.text-success {
+        color: #28a745 !important;
+    }
+    
+    .asset-class-header .diff-value.text-danger,
+    .sum-row .diff-value.text-danger {
+        color: #dc3545 !important;
+    }
+    </style>
+{% endblock %}
+
+
+
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="header-section mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex flex-column">
-                <h2 class="main-title">
-                    <i class="fas fa-chart-pie me-2 text-primary"></i>{{ portfolio.portfolio_name }}
+    <!-- Modern header using refined-header class -->
+    <div class="refined-header">
+        <div class="accent-line"></div>
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">{{ portfolio.portfolio_name }}</h1>
+                <h2 class="portfolio-subtitle">
+                  
+                    Portfolio Overview
                 </h2>
-                <h4 class="subtitle">Main portfolio page</h4>
+            </div>
+            <div class="header-decoration">
+                <i class="fas fa-chart-pie"></i>
             </div>
         </div>
     </div>
 
-    <!-- Holdings Card -->
-    <div class="card">
-        <div class="card-header">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-chart-pie me-2 text-primary"></i>
-                    <h5 class="card-title mb-0">Portfolio Holdings</h5>
-                </div>
-                <a href="{{ url_for('get_funds') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i>Add Holdings
-                </a>
-            </div>
-        </div>
-        <div class="card-body" style="padding: 30px 20px 20px 20px;">
+    <div class="section-divider">
+        <span>PORTFOLIO HOLDINGS</span>
+    </div>
+
+    <!-- Holdings Card using card-strategy class -->
+    <div class="card-strategy">
+        <div class="card-body">
             {% if holdings_by_asset_class %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="holdingsTable">
@@ -40,12 +152,12 @@
                         </tr>
                         <tr>
                             <th style="width: 40%" class="text-start">Fund Name</th>
+                            <th style="width: 9%" class="text-end">Portfolio</th>
+                            <th style="width: 9%" class="text-end">Strategic</th>
+                            <th style="width: 9%" class="text-end">Diff.</th>
                             <th style="width: 10%" class="text-end">Portfolio</th>
-                            <th style="width: 10%" class="text-end">Strategic</th>
-                            <th style="width: 10%" class="text-end">Diff.</th>
-                            <th style="width: 10%" class="text-end">Portfolio</th>
-                            <th style="width: 10%" class="text-end">Strategic</th>
-                            <th style="width: 10%" class="text-end">Diff.</th>
+                            <th style="width: 8%" class="text-end">Strategic</th>
+                            <th style="width: 6%" class="text-end">Diff.</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -169,8 +281,8 @@
             </div>
             {% else %}
             <!-- Empty State -->
-            <div class="text-center text-muted" style="padding: 3rem 0;">
-                <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-chart-pie fa-3x mb-3 opacity-30"></i>
                 <h5>No Holdings Found</h5>
                 <p>This portfolio doesn't have any holdings yet.</p>
                 <a href="{{ url_for('get_funds') }}" class="btn btn-primary">
@@ -180,160 +292,15 @@
             {% endif %}
         </div>
     </div>
+        <!-- Footer Separator -->
+<div class="footer-separator">
+    <div class="separator-line"></div>
+</div>
 </div>
 
-<style>
-/* Page-specific styling */
-.header-section {
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
+{% endblock %}
 
-.main-title {
-    font-size: 2.5rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.5px;
-}
-
-.subtitle {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 0;
-}
-
-.card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-}
-
-.card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.table th {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-bottom: 2px solid var(--border-color);
-    font-weight: 600;
-    padding: 0.25rem 0.25rem;
-    height: 22px;
-    color: var(--text-color);
-}
-
-.table td {
-    padding: 0.25rem 0.25rem;
-    vertical-align: middle;
-    height: 27px;
-    font-size: 0.9rem;
-}
-
-/* Asset Class Header Styling */
-.asset-class-header {
-    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
-    border-top: 2px solid var(--border-color);
-}
-
-.asset-class-title {
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    padding: 0.25rem 0.25rem !important;
-    font-weight: 300;
-    height: 27px;
-}
-
-/* Holdings Row Styling */
-.holding-row {
-    transition: all 0.2s ease;
-}
-
-.holding-row:hover {
-    background-color: rgba(45, 125, 237, 0.04) !important;
-    transform: scale(1.002);
-    box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
-}
-
-/* Price styling */
-.price-cell {
-    position: relative;
-}
-
-.price-cell.myprice-text {
-    cursor: pointer;
-}
-
-.myprice-text {
-    color: var(--primary-color) !important;
-    font-weight: 500;
-}
-
-/* Sum Row Styling */
-.sum-row {
-    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
-    border-top: 2px solid var(--border-color);
-}
-
-.sum-title {
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    padding: 0.25rem 0.25rem !important;
-    font-weight: 300;
-    height: 27px;
-}
-
-/* Fund name cell styling */
-.fund-name-cell {
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.fund-name-cell:hover {
-    color: #000 !important;
-    font-weight: 500;
-}
-
-/* Difference bar styling */
-.diff-bar-container,
-.diff-bar,
-.holding-bar {
-    display: none;
-}
-
-.diff-value {
-    font-weight: 500;
-}
-
-.asset-class-header .diff-value,
-.sum-row .diff-value {
-    font-weight: 500;
-}
-
-.asset-class-header .diff-value.text-success,
-.sum-row .diff-value.text-success {
-    color: #28a745 !important;
-}
-
-.asset-class-header .diff-value.text-danger,
-.sum-row .diff-value.text-danger {
-    color: #dc3545 !important;
-}
-</style>
-
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Portfolio view loaded');

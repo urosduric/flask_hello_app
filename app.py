@@ -373,11 +373,11 @@ def login():
                 next_page = url_for('get_portfolios')
             
             return redirect(next_page)
-            
+
         except Exception as e:
             db.session.rollback()
             return render_template('login.html', error='An error occurred during login. Please try again.')
-    
+            
     return render_template('login.html')
 
 @app.route('/user_page')
@@ -2214,6 +2214,99 @@ def view_fund(id):
         return redirect(url_for('get_funds'))
     
     return render_template('view_fund.html', fund=fund)
+
+@app.route('/total_portfolio')
+@login_required
+def total_portfolio():
+    # Get all portfolios for the user
+    portfolios = Portfolio.query.filter_by(user_id=current_user.id).all()
+    
+    # Dictionary to store aggregated holdings by fund_id
+    aggregated_holdings = {}
+    total_value = 0
+    
+    # Aggregate holdings across all portfolios
+    for portfolio in portfolios:
+        holdings = Holding.query.filter_by(portfolio_id=portfolio.id).all()
+        for holding in holdings:
+            fund_id = holding.fund_id
+            
+            # Determine the price to use with proper null checks
+            try:
+                if holding.use_myprice:
+                    price = holding.price_per_unit
+                else:
+                    price = holding.fund.price
+                
+                # Only calculate amount if we have both valid units and price
+                if holding.units is not None and price is not None:
+                    amount = holding.units * price
+                else:
+                    amount = 0
+                    
+            except (TypeError, AttributeError):
+                # Handle any type errors or missing attributes
+                amount = 0
+            
+            if fund_id not in aggregated_holdings:
+                aggregated_holdings[fund_id] = {
+                    'fund': holding.fund,
+                    'units': holding.units or 0,
+                    'amount': amount
+                }
+            else:
+                aggregated_holdings[fund_id]['units'] += (holding.units or 0)
+                aggregated_holdings[fund_id]['amount'] += amount
+    
+    # Calculate total portfolio value
+    total_value = sum(holding['amount'] for holding in aggregated_holdings.values())
+    
+    # Group holdings by asset class
+    holdings_by_asset_class = {}
+    asset_class_sums = {}
+    
+    for fund_id, holding_data in aggregated_holdings.items():
+        fund = holding_data['fund']
+        if not fund:  # Skip if fund is None
+            continue
+            
+        asset_class = fund.benchmark.asset_class if fund.benchmark else 'Unknown'
+        
+        # Calculate weight (avoid division by zero)
+        weight = (holding_data['amount'] / total_value * 100) if total_value > 0 else 0
+        
+        holding_info = {
+            'fund': fund,
+            'units': holding_data['units'],
+            'amount': holding_data['amount'],
+            'weight': weight
+        }
+        
+        # Add to holdings by asset class
+        if asset_class not in holdings_by_asset_class:
+            holdings_by_asset_class[asset_class] = []
+            asset_class_sums[asset_class] = 0
+        
+        holdings_by_asset_class[asset_class].append(holding_info)
+        asset_class_sums[asset_class] += holding_data['amount']
+    
+    # Calculate asset class weights
+    asset_class_weights = {
+        asset_class: (sum_amount / total_value * 100) if total_value > 0 else 0
+        for asset_class, sum_amount in asset_class_sums.items()
+    }
+    
+    # Sort holdings within each asset class by amount (descending)
+    for asset_class in holdings_by_asset_class:
+        holdings_by_asset_class[asset_class].sort(key=lambda x: x['amount'], reverse=True)
+    
+    return render_template(
+        'total_portfolio.html',
+        holdings_by_asset_class=holdings_by_asset_class,
+        asset_class_sums=asset_class_sums,
+        asset_class_weights=asset_class_weights,
+        total_value=total_value
+    )
 
 if __name__ == '__main__':
     with app.app_context():
