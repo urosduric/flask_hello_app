@@ -134,8 +134,34 @@
         </div>
     </div>
 
+
+<div class="section-divider">
+    <span>PERFORMANCE</span>
+</div>
+
+<!-- Portfolio Performance Card -->
+<div class="card card-strategy">
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-chart-line me-2 text-primary"></i>
+            <h5 class="card-title mb-0">Strategy Performance</h5>
+        </div>
+    </div>
+
+    <div class="card-body p-4">
+        {% if performance_plot_json %}
+        <div id="performanceChart" style="width:100%; height:350px;"></div>
+        {% else %}
+        <div class="alert alert-info m-0">
+            <i class="fas fa-info-circle me-2"></i>No performance data available.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
     <div class="section-divider">
-        <span>PORTFOLIO HOLDINGS</span>
+        <span>HOLDINGS</span>
     </div>
 
     <!-- Holdings Card using card-strategy class -->
@@ -294,7 +320,7 @@
     </div>
 
     <div class="section-divider">
-        <span>GEOGRAPHIC EXPOSURE</span>
+        <span>GEOGRAPHY</span>
     </div>
 
 
@@ -351,6 +377,65 @@
         </div>
     </div>
 </div>
+
+<div class="section-divider">
+    <span>RISK</span>
+</div>
+
+
+<!-- Geographic Exposure Map -->
+<div class="card card-strategy">
+
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-globe me-2 text-primary"></i>
+            <h5 class="card-title mb-0">Allocation</h5>
+           
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card card-body">
+                {% if beta_indicator_json %}
+                <h5 class="card-title mb-0">Beta</h5>
+                <div id="betaIndicator" style="width:100%;"></div>
+                {% else %}
+                <div class="alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No beta data available.
+                </div>
+                {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card card-body">
+                {% if duration_indicator_json %}
+                <h5 class="card-title mb-0">Duration</h5>
+                <div id="durationIndicator""></div>
+                {% else %}
+                <div class="alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No duration data available.
+                </div>
+                {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                {% if beta_indicator_json %}
+                <div id="betaIndicator" style="width:100%;"></div>
+                {% else %}
+                <div class="alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No beta data available.
+                </div>
+                {% endif %}
+            </div>
+            
+        </div>
+    </div>
+</div>
+
 
 
 
@@ -426,4 +511,84 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
+
+<!-- Performance chart initialization -->
+{% if performance_plot_json %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var performanceData = {{ performance_plot_json | safe }};
+    var config = {
+        displayModeBar: false,
+        responsive: true,
+        staticPlot: false,
+        displaylogo: false
+    };
+    
+    Plotly.newPlot('performanceChart', performanceData.data, performanceData.layout, config);
+
+    // Make chart responsive with debouncing
+    var resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            Plotly.Plots.resize('performanceChart');
+        }, 100);
+    });
+});
+</script>
+{% endif %}
+
+<!-- Beta indicator initialization -->
+{% if beta_indicator_json %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var betaData = {{ beta_indicator_json | safe }};
+    var config = {
+        displayModeBar: false,
+        responsive: true,
+        staticPlot: false,
+        displaylogo: false
+    };
+    
+    Plotly.newPlot('betaIndicator', betaData.data, betaData.layout, config);
+
+    // Make indicator responsive with debouncing
+    var resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            Plotly.Plots.resize('betaIndicator');
+        }, 100);
+    });
+});
+</script>
+{% endif %}
+
+
+<!-- Duration indicator initialization -->
+{% if duration_indicator_json %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var durationData = {{ duration_indicator_json | safe }};
+    var config = {
+        displayModeBar: false,
+        responsive: true,
+        staticPlot: false,
+        displaylogo: false
+    };
+    
+    Plotly.newPlot('durationIndicator', durationData.data, durationData.layout, config);
+
+    // Make indicator responsive with debouncing
+    var resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            Plotly.Plots.resize('durationIndicator');
+        }, 100);
+    });
+});
+</script>
+{% endif %}
+
 {% endblock %} 

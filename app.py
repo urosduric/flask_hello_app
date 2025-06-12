@@ -1612,6 +1612,220 @@ def view_portfolio(id):
         (abs(d) for d in asset_class_diff_sums.values()),
         default=0
     )
+
+    # Calculate portfolio performance
+    performance_plot_json = None
+    if holdings:
+        # Get all fund IDs
+        fund_ids = [holding.fund_id for holding in holdings]
+        
+        # Get the latest date from any fund's performance data
+        latest_date = db.session.query(db.func.max(FundPerformance.date))\
+            .filter(FundPerformance.fund_id.in_(fund_ids))\
+            .scalar()
+        
+        if latest_date:
+            # Calculate start date (1 year before latest date)
+            start_date = latest_date - timedelta(days=365)
+            
+            # Get performance data for all funds in the date range
+            perf_data = db.session.query(
+                FundPerformance.date,
+                FundPerformance.fund_id,
+                FundPerformance.daily_performance
+            ).filter(
+                FundPerformance.fund_id.in_(fund_ids),
+                FundPerformance.date >= start_date,
+                FundPerformance.date <= latest_date
+            ).order_by(FundPerformance.date).all()
+            
+            if perf_data:
+                # Create a dictionary of fund weights
+                fund_weights = {
+                    holding.fund_id: holding.calculated_weight / 100 if holding.calculated_weight else 0
+                    for holding in holdings
+                }
+                
+                # Group performance data by date
+                perf_by_date = {}
+                for date, fund_id, perf in perf_data:
+                    if date not in perf_by_date:
+                        perf_by_date[date] = {}
+                    perf_by_date[date][fund_id] = perf
+
+                # Calculate cumulative performance
+                dates = []
+                cumulative_performance = []
+                cum_perf = 1.0  # Start at 100%
+                
+                for date in sorted(perf_by_date.keys()):
+                    # Calculate weighted daily return for the portfolio
+                    daily_return = 0
+                    for fund_id, perf in perf_by_date[date].items():
+                        weight = fund_weights.get(fund_id, 0)
+                        daily_return += weight * perf
+                    
+                    # Update cumulative performance
+                    cum_perf *= (1 + daily_return/100)
+                    dates.append(date.strftime('%Y-%m-%d'))
+                    cumulative_performance.append((cum_perf - 1) * 100)
+                
+                # Create Plotly figure
+                fig = go.Figure()
+                
+                # Add trace with cumulative returns
+                fig.add_trace(go.Scatter(
+                    x=dates,
+                    y=cumulative_performance,
+                    mode='lines',
+                    name='Cumulative Performance',
+                    line=dict(
+                        color='#2E5BFF',
+                        width=2,
+                        shape='spline'
+                    ),
+                    fill='tonexty',
+                    fillcolor='rgba(46, 91, 255, 0.1)',
+                    hovertemplate='%{x}<br>Return: %{y:.2f}%<extra></extra>'
+                ))
+                
+                # Enhanced layout
+                fig.update_layout(
+                    showlegend=False,
+                    margin=dict(l=40, r=20, t=20, b=40),
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    xaxis=dict(
+                        showgrid=True,
+                        gridcolor='rgba(0,0,0,0.1)',
+                        showline=True,
+                        linecolor='rgba(0,0,0,0.2)',
+                        linewidth=1,
+                        title=None,
+                        tickfont=dict(
+                            family='Inter',
+                            size=10,
+                            color='rgba(0,0,0,0.6)'
+                        )
+                    ),
+                    yaxis=dict(
+                        showgrid=True,
+                        gridcolor='rgba(0,0,0,0.1)',
+                        showline=True,
+                        linecolor='rgba(0,0,0,0.2)',
+                        linewidth=1,
+                        title=None,
+                        ticksuffix='%',
+                        tickfont=dict(
+                            family='Inter',
+                            size=10,
+                            color='rgba(0,0,0,0.6)'
+                        ),
+                        zeroline=True,
+                        zerolinecolor='rgba(0,0,0,0.2)',
+                        zerolinewidth=1
+                    ),
+                    hovermode='x unified',
+                    hoverlabel=dict(
+                        bgcolor='white',
+                        font_size=12,
+                        font_family="Inter"
+                    )
+                )
+                
+                performance_plot_json = fig.to_json()
+    
+    # Calculate portfolio beta and create indicator
+    beta_indicator_json = None
+    duration_indicator_json = None
+    if holdings:
+        # Calculate weighted beta and duration
+        portfolio_beta = 0.0
+        portfolio_duration = 0.0
+        for holding in holdings:
+            if holding.calculated_weight and holding.fund.benchmark:
+                weight = holding.calculated_weight / 100  # Convert percentage to decimal
+                beta = holding.fund.benchmark.beta
+                duration = holding.fund.benchmark.mod_duration
+                portfolio_beta += weight * beta
+                portfolio_duration += weight * duration
+
+        portfolio_beta = round(portfolio_beta, 2)
+        portfolio_duration = round(portfolio_duration, 2)
+
+        # Create beta indicator
+        fig = go.Figure(go.Indicator(
+            domain={'x': [0, 1], 'y': [0, 1]},
+            value=portfolio_beta,
+            mode="gauge+number",
+            title=None,
+            number={'font': {'size': 25}},
+            gauge={
+                'shape': 'angular',
+                'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                'bar': {'color': "#1a73e8"},
+                'bgcolor': "white",
+                'borderwidth': 0,
+                'bordercolor': 'gray',
+                'steps': [
+                    {'range': [0, 0.33], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
+                    {'range': [0.33, 0.66], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
+                    {'range': [0.66, 1], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
+                ],
+                'threshold': {
+                    'line': {'color': "red", 'width': 0},
+                    'thickness': 0.75,
+                    'value': 0.8
+                }
+            }
+        ))
+
+        # Update layout for clean look
+        fig.update_layout(
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            margin=dict(l=20, r=20, t=10, b=10),
+            height=300
+        )
+
+        beta_indicator_json = fig.to_json()
+
+        # Create duration indicator
+        fig = go.Figure(go.Indicator(
+            domain={'x': [0, 1], 'y': [0, 1]},
+            value=portfolio_duration,
+            mode="gauge+number",
+            title=None,
+            number={'font': {'size': 25}},
+            gauge={
+                'shape': 'angular',
+                'axis': {'range': [0, 10], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                'bar': {'color': "#1a73e8"},
+                'bgcolor': "white",
+                'borderwidth': 0,
+                'bordercolor': 'gray',
+                'steps': [
+                    {'range': [0, 2], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
+                    {'range': [2, 5], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
+                    {'range': [5, 10], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
+                ],
+                'threshold': {
+                    'line': {'color': "red", 'width': 0},
+                    'thickness': 0.75,
+                    'value': 7
+                }
+            }
+        ))
+
+        # Update layout for clean look
+        fig.update_layout(
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=300
+        )
+
+        duration_indicator_json = fig.to_json()
     
     return render_template('view_portfolio.html', 
                          portfolio=portfolio, 
@@ -1631,7 +1845,10 @@ def view_portfolio(id):
                          max_asset_class_diff=max_asset_class_diff,
                          map_json=map_json,
                          top_10_countries=top_10_countries,
-                         other_countries_weight=other_countries_weight)
+                         other_countries_weight=other_countries_weight,
+                         performance_plot_json=performance_plot_json,
+                         beta_indicator_json=beta_indicator_json,
+                         duration_indicator_json=duration_indicator_json)
 
 
 @app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
