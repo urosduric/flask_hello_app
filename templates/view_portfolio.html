@@ -292,20 +292,84 @@
             {% endif %}
         </div>
     </div>
-        <!-- Footer Separator -->
-<div class="footer-separator">
-    <div class="separator-line"></div>
+
+    <div class="section-divider">
+        <span>GEOGRAPHIC EXPOSURE</span>
+    </div>
+
+
+<!-- Geographic Exposure Map -->
+<div class="card card-strategy">
+
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-globe me-2 text-primary"></i>
+            <h5 class="card-title mb-0">Geographic Exposure</h5>
+           
+        </div>
+    </div>
+
+    <div class="card-body p-4">
+        <div class="row">
+            <div class="col-lg-8" style="padding-right: 50px; padding-left: 20px">
+            
+                {% if map_json %}
+                <div id="geographicMap" style="width:100%"></div>
+                {% else %}
+                <div class="alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No geographic exposure data available.
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-4">
+            
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Country</th>
+                                <th class="text-end">Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for country, weight in top_10_countries %}
+                            <tr>
+                                <td style="height: 10px">{{ country }}</td>
+                                <td class="text-end" style="height: 10px">{{ "%.1f"|format(weight) }}%</td>
+                            </tr>
+                            {% endfor %}
+                            {% if other_countries_weight > 0 %}
+                            <tr class="border-top">
+                                <td><strong>Others</strong></td>
+                                <td class="text-end"><strong>{{ "%.1f"|format(other_countries_weight) }}%</strong></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+
+
+    <!-- Footer Separator -->
+    <div class="footer-separator">
+        <div class="separator-line"></div>
+    </div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+<!-- Tooltip initialization -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Portfolio view loaded');
-    
-    // Initialize all tooltips
+    // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
@@ -336,4 +400,30 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 </script>
+
+<!-- Map initialization -->
+{% if map_json %}
+<script>
+var mapData = {{ map_json | safe }};
+document.addEventListener('DOMContentLoaded', function() {
+    var config = {
+        displayModeBar: false,
+        responsive: true,
+        staticPlot: false,
+        displaylogo: false
+    };
+    
+    Plotly.newPlot('geographicMap', mapData.data, mapData.layout, config);
+
+    // Make map responsive with debouncing
+    var resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            Plotly.Plots.resize('geographicMap');
+        }, 100);
+    });
+});
+</script>
+{% endif %}
 {% endblock %} 

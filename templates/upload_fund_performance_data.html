@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Data - {{ risk_factor.name }}{% endblock %}
+{% block title %}Upload Data - {{ fund.name }}{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -68,11 +68,11 @@
         <div class="header-content">
             <div class="title-stack">
                 <h1 class="page-title">Upload Performance Data</h1>
-                <h2 class="portfolio-subtitle">{{ risk_factor.name }}</h2>
+                <h2 class="portfolio-subtitle">{{ fund.name }}</h2>
             </div>
             <div class="header-actions">
-                <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Risk Factor
+                <a href="{{ url_for('view_fund', id=fund.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Fund
                 </a>
             </div>
         </div>
@@ -102,7 +102,6 @@
                             <li>Date format: YYYY-MM-DD</li>
                             <li>Returns should be in decimals (e.g., 0.05 for 5%)</li>
                             <li>Maximum file size: 5MB</li>
-                            <li>Existing data will be replaced</li>
                         </ul>
                     </div>
                     
@@ -125,7 +124,7 @@
                                 </label>
                             </div>
                         </div>
-                        
+
                         <!-- Drag & Drop Zone -->
                         <div class="upload-zone" id="dropZone">
                             <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
@@ -177,7 +176,7 @@
                             <button type="submit" class="btn btn-primary" id="uploadButton" disabled>
                                 <i class="fas fa-upload me-2"></i>Upload Data
                             </button>
-                            <a href="{{ url_for('view_risk_factor', id=risk_factor.id) }}" class="btn btn-outline-secondary ms-2">
+                            <a href="{{ url_for('view_fund', id=fund.id) }}" class="btn btn-outline-secondary ms-2">
                                 Cancel
                             </a>
                         </div>
@@ -356,4 +355,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %} 
+{% endblock %}

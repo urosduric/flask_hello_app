@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Country Allocation - {{ benchmark.benchmark_name }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .table th {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+        padding: 0.75rem;
+        color: var(--text-color);
+    }
+    
+    .table td {
+        padding: 0.75rem;
+        vertical-align: middle;
+    }
+    
+    .weight-input {
+        max-width: 120px;
+    }
+    
+    .total-row {
+        background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+        border-top: 2px solid var(--border-color);
+        font-weight: 500;
+    }
+    
+    .total-row.warning {
+        color: var(--danger-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Modern header using refined-header class -->
+    <div class="refined-header">
+        <div class="accent-line"></div>
+        <div class="header-content">
+            <div class="title-stack">
+                <h1 class="page-title">{{ benchmark.benchmark_name }}</h1>
+                <h2 class="portfolio-subtitle">
+                    <i class="fas fa-globe me-2"></i>Country Allocation
+                </h2>
+            </div>
+            <div class="header-decoration">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Allocations Section -->
+    <div class="section-divider">
+        <span>CURRENT ALLOCATIONS</span>
+    </div>
+
+    <div class="card card-strategy mb-4">
+        <div class="card-body">
+            {% if countries %}
+            <form method="POST" action="{{ url_for('edit_benchmark_countries', id=benchmark.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">Country</th>
+                                <th style="width: 30%">Weight (%)</th>
+                                <th style="width: 20%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for country in countries %}
+                            <tr>
+                                <td>
+                                    <strong>{{ country_names.get(country.country, country.country) }}</strong>
+                                    <small class="text-muted ms-2">({{ country.country }})</small>
+                                </td>
+                                <td>
+                                    <input type="number" 
+                                           name="weight_{{ country.id }}" 
+                                           value="{{ "%.2f"|format(country.weight) }}" 
+                                           class="form-control form-control-sm weight-input" 
+                                           step="0.01" 
+                                           min="0" 
+                                           max="100"
+                                           required>
+                                </td>
+                                <td>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            onclick="deleteCountry('{{ country.id }}')">
+                                        <i class="fas fa-trash me-1"></i>Remove
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="total-row" id="totalRow">
+                                <td><strong>Total Allocation</strong></td>
+                                <td id="totalWeight"><strong>{{ "%.2f"|format(total_weight) }}%</strong></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-info m-0">
+                <i class="fas fa-info-circle me-2"></i>No countries allocated yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add New Country Section -->
+    <div class="section-divider">
+        <span>ADD NEW COUNTRY</span>
+    </div>
+
+    <div class="card card-strategy mb-4">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('add_benchmark_country', id=benchmark.id) }}" class="row g-3 align-items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-5">
+                    <label class="form-label">Country</label>
+                    <select name="country" class="form-select" required>
+                        <option value="">Select a country...</option>
+                        {% for code, name in available_countries %}
+                        <option value="{{ code }}">{{ name }} ({{ code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Weight (%)</label>
+                    <input type="number" 
+                           name="weight" 
+                           class="form-control" 
+                           step="0.01" 
+                           min="0" 
+                           max="100" 
+                           placeholder="Enter weight..."
+                           required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-plus me-2"></i>Add Country
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer Separator -->
+    <div class="footer-separator">
+        <div class="separator-line"></div>
+        <div class="d-flex justify-content-end mt-4">
+            <a href="{{ url_for('view_benchmark', id=benchmark.id) }}" class="btn btn-link text-decoration-none">
+                <i class="fas fa-arrow-left me-2"></i>Back to Benchmark
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update total weight when any weight input changes
+    const weightInputs = document.querySelectorAll('input[name^="weight_"]');
+    const totalWeightElement = document.getElementById('totalWeight');
+    const totalRow = document.getElementById('totalRow');
+
+    function updateTotalWeight() {
+        let total = 0;
+        weightInputs.forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        totalWeightElement.innerHTML = `<strong>${total.toFixed(2)}%</strong>`;
+        
+        // Highlight total if not 100%
+        if (Math.abs(total - 100) > 0.01) {
+            totalRow.classList.add('warning');
+        } else {
+            totalRow.classList.remove('warning');
+        }
+    }
+
+    weightInputs.forEach(input => {
+        input.addEventListener('input', updateTotalWeight);
+    });
+
+    // Delete country function
+    window.deleteCountry = function(countryId) {
+        if (confirm('Are you sure you want to delete this country allocation?')) {
+            fetch(`/delete_benchmark_country/${countryId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Error deleting country allocation');
+                }
+            });
+        }
+    };
+});
+</script>
+{% endblock %}

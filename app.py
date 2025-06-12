@@ -19,6 +19,11 @@ import json
 import numpy as np
 import re
 from sqlalchemy.exc import IntegrityError
+from werkzeug.utils import secure_filename
+import pycountry
+
+
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
@@ -283,14 +288,65 @@ class RiskFactorData(db.Model):
     )
 
     def __repr__(self):
-        return f'<RiskFactorData {self.risk_factor.name} {self.date}>'
+        return f'<RiskFactorData {self.id}>'
 
     def to_dict(self):
         return {
             'id': self.id,
             'risk_factor_id': self.risk_factor_id,
-            'date': self.date.isoformat(),
+            'date': self.date.strftime('%Y-%m-%d'),
             'daily_return': self.daily_return
+        }
+
+class BenchmarkCountries(db.Model):
+    __tablename__ = 'benchmark_countries'
+    id = db.Column(db.Integer, primary_key=True)
+    benchmark_id = db.Column(db.Integer, db.ForeignKey('benchmark.id'), nullable=False)
+    country = db.Column(db.String(3), nullable=False)  # ISO 3-letter country code
+    weight = db.Column(db.Float, nullable=False)
+    
+    # Relationship to Benchmark model
+    benchmark = db.relationship('Benchmark', backref='countries', lazy=True)
+    
+    __table_args__ = (
+        db.UniqueConstraint('benchmark_id', 'country', name='unique_benchmark_country'),
+    )
+
+    def __repr__(self):
+        return f'<BenchmarkCountries {self.benchmark_id}-{self.country}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'benchmark_id': self.benchmark_id,
+            'country': self.country,
+            'weight': self.weight
+        }
+
+# Fund Performance Model
+class FundPerformance(db.Model):
+    __tablename__ = 'fund_performance'
+    id = db.Column(db.Integer, primary_key=True)
+    fund_id = db.Column(db.Integer, db.ForeignKey('fund.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    daily_performance = db.Column(db.Float, nullable=False)
+    
+    __table_args__ = (
+        db.UniqueConstraint('fund_id', 'date', name='unique_fund_date'),
+    )
+
+    # Relationship to Fund model
+    fund = db.relationship('Fund', backref='performances', lazy=True)
+
+    def __repr__(self):
+        return f'<FundPerformance {self.fund.fund_name} {self.date}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'fund_id': self.fund_id,
+            'date': self.date.isoformat(),
+            'daily_performance': self.daily_performance
         }
 
 # Login decorator
@@ -1003,8 +1059,16 @@ def view_risk_factor(id):
                          data=data,
                          plot_json=plot_json)
 
+# Add these constants at the top of the file after other configurations
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+ALLOWED_EXTENSIONS = {'csv'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/risk_factor/<int:id>/upload_data', methods=['GET', 'POST'])
 @login_required
+@limiter.limit("10 per minute")
 def upload_risk_factor_data(id):
     if not current_user.is_admin():
         flash('You do not have permission to access this page.', 'error')
@@ -1013,56 +1077,202 @@ def upload_risk_factor_data(id):
     risk_factor = RiskFactor.query.get_or_404(id)
     
     if request.method == 'POST':
+        # Check if the post request has the file part
         if 'file' not in request.files:
             return render_template('upload_risk_factor_data.html', 
                                 risk_factor=risk_factor,
                                 error='No file uploaded')
         
         file = request.files['file']
+        upload_mode = request.form.get('upload_mode', 'append')  # Get upload mode from form
+        
+        # Check if a file was selected
         if file.filename == '':
             return render_template('upload_risk_factor_data.html', 
                                 risk_factor=risk_factor,
                                 error='No file selected')
-        
-        if file and file.filename.endswith('.csv'):
-            try:
-                # Read CSV file
-                df = pd.read_csv(file)
-                
-                # Validate columns
-                required_columns = ['date', 'daily_return']
-                if not all(col in df.columns for col in required_columns):
-                    return render_template('upload_risk_factor_data.html',
-                                        risk_factor=risk_factor,
-                                        error='CSV must contain date and daily_return columns')
-                
-                # Convert date strings to datetime
-                df['date'] = pd.to_datetime(df['date'])
-                
-                # Delete existing data for this risk factor
-                RiskFactorData.query.filter_by(risk_factor_id=id).delete()
-                
-                # Insert new data
-                for _, row in df.iterrows():
-                    data_point = RiskFactorData(
-                        risk_factor_id=id,
-                        date=row['date'].date(),
-                        daily_return=float(row['daily_return'])
-                    )
-                    db.session.add(data_point)
-                
-                db.session.commit()
-                return redirect(url_for('view_risk_factor', id=id))
-            
-            except Exception as e:
-                db.session.rollback()
-                return render_template('upload_risk_factor_data.html',
-                                    risk_factor=risk_factor,
-                                    error=f'Error processing file: {str(e)}')
-        else:
+
+        # Check file size
+        if request.content_length > MAX_FILE_SIZE:
             return render_template('upload_risk_factor_data.html',
                                 risk_factor=risk_factor,
-                                error='Please upload a CSV file')
+                                error='File size exceeds maximum limit of 5MB')
+
+        # Validate file type and extension
+        if not allowed_file(file.filename):
+            return render_template('upload_risk_factor_data.html',
+                                risk_factor=risk_factor,
+                                error='Invalid file type. Only CSV files are allowed.')
+        
+        if file:
+            try:
+                # Try reading the first few bytes to check if file is actually a CSV
+                try:
+                    content_start = file.read(1024).decode('utf-8')
+                    file.seek(0)  # Reset file pointer
+                    
+                    # Check if content looks like CSV
+                    if ',' not in content_start and ';' not in content_start:
+                        raise ValueError("File does not appear to be a valid CSV. Please ensure it's comma or semicolon delimited.")
+                except UnicodeDecodeError:
+                    raise ValueError("File appears to be binary or not properly encoded. Please ensure it's a valid UTF-8 encoded CSV file.")
+
+                # Try different delimiters
+                try:
+                    df = pd.read_csv(file)
+                except:
+                    file.seek(0)
+                    try:
+                        df = pd.read_csv(file, sep=';')
+                    except:
+                        raise ValueError("Could not parse CSV file. Please ensure it uses comma (,) or semicolon (;) as delimiter.")
+
+                # Check if file is empty
+                if df.empty:
+                    raise ValueError("The CSV file is empty")
+                
+                # Check for minimum number of rows
+                if len(df) < 2:
+                    raise ValueError("CSV file must contain at least 2 rows of data")
+
+                # Check for maximum number of rows (e.g., 10000)
+                if len(df) > 10000:
+                    raise ValueError("CSV file contains too many rows. Maximum allowed is 10,000 rows.")
+                
+                # Try to parse dates with multiple formats
+                try:
+                    # First try automatic parsing
+                    df['date'] = pd.to_datetime(df['date'])
+                except ValueError:
+                    # If automatic parsing fails, try specific common formats
+                    date_formats = [
+                        '%Y-%m-%d',      # 2023-12-31
+                        '%d-%m-%Y',      # 31-12-2023
+                        '%m-%d-%Y',      # 12-31-2023
+                        '%Y/%m/%d',      # 2023/12/31
+                        '%d/%m/%Y',      # 31/12/2023
+                        '%m/%d/%Y',      # 12/31/2023
+                        '%d.%m.%Y',      # 31.12.2023
+                        '%Y.%m.%d',      # 2023.12.31
+                        '%m.%d.%Y'       # 12.31.2023
+                    ]
+                    
+                    parsed = False
+                    for date_format in date_formats:
+                        try:
+                            df['date'] = pd.to_datetime(df['date'], format=date_format)
+                            parsed = True
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if not parsed:
+                        raise ValueError("Could not parse dates. Please ensure dates are in a standard format (e.g., YYYY-MM-DD, DD-MM-YYYY, MM-DD-YYYY)")
+                
+                # Sort by date to ensure chronological order
+                df = df.sort_values('date')
+                
+                # Validate daily_return values
+                if not pd.to_numeric(df['daily_return'], errors='coerce').notna().all():
+                    raise ValueError("Invalid daily return values found. Please ensure all values are numeric.")
+                
+                # Check for duplicates
+                duplicates = df[df.duplicated(['date'], keep=False)]
+                if not duplicates.empty:
+                    duplicate_dates = duplicates['date'].dt.strftime('%Y-%m-%d').unique()
+                    raise ValueError(f"Duplicate dates found: {', '.join(duplicate_dates)}")
+                
+                # Validate date range
+                if df['date'].min() > df['date'].max():
+                    raise ValueError("Invalid date range: earliest date is after latest date")
+
+                # Start transaction
+                db.session.begin_nested()
+                
+                try:
+                    # Get the dates from the new data
+                    new_dates = set(date.date() for date in df['date'])
+                    
+                    # Get existing dates for this risk factor
+                    existing_dates = set(
+                        date[0] for date in 
+                        db.session.query(RiskFactorData.date)
+                        .filter_by(risk_factor_id=id)
+                        .all()
+                    )
+                    
+                    # Initialize counters
+                    records_added = 0
+                    records_updated = 0
+                    records_skipped = 0
+                    
+                    if upload_mode == 'overwrite':
+                        # Delete records with matching dates if in overwrite mode
+                        RiskFactorData.query.filter(
+                            RiskFactorData.risk_factor_id == id,
+                            RiskFactorData.date.in_(new_dates)
+                        ).delete(synchronize_session=False)
+                    
+                    # Insert new data
+                    for _, row in df.iterrows():
+                        date = row['date'].date()
+                        
+                        if date in existing_dates:
+                            if upload_mode == 'overwrite':
+                                # Add new record (old one was deleted)
+                                data_point = RiskFactorData(
+                                    risk_factor_id=id,
+                                    date=date,
+                                    daily_return=float(row['daily_return'])
+                                )
+                                db.session.add(data_point)
+                                records_updated += 1
+                            else:
+                                # Skip this record in append mode
+                                records_skipped += 1
+                        else:
+                            # Add new record for new date
+                            data_point = RiskFactorData(
+                                risk_factor_id=id,
+                                date=date,
+                                daily_return=float(row['daily_return'])
+                            )
+                            db.session.add(data_point)
+                            records_added += 1
+                    
+                    db.session.commit()
+                    
+                    # Prepare success message
+                    message_parts = []
+                    if records_added > 0:
+                        message_parts.append(f"{records_added} new records added")
+                    if records_updated > 0:
+                        message_parts.append(f"{records_updated} records updated")
+                    if records_skipped > 0:
+                        message_parts.append(f"{records_skipped} records skipped (dates already exist)")
+                    
+                    if not message_parts:
+                        flash('No new data was added to the database.', 'info')
+                    else:
+                        flash(f"Upload successful: {', '.join(message_parts)}!", 'success')
+                    
+                    return redirect(url_for('view_risk_factor', id=id))
+                    
+                except Exception as e:
+                    # Rollback to savepoint
+                    db.session.rollback()
+                    app.logger.error(f"Error uploading data for risk factor {id}: {str(e)}")
+                    raise ValueError(f"Database error: {str(e)}")
+            
+            except ValueError as ve:
+                return render_template('upload_risk_factor_data.html',
+                                    risk_factor=risk_factor,
+                                    error=str(ve))
+            except Exception as e:
+                app.logger.error(f"Unexpected error uploading data for risk factor {id}: {str(e)}")
+                return render_template('upload_risk_factor_data.html',
+                                    risk_factor=risk_factor,
+                                    error='An unexpected error occurred while processing the file')
     
     return render_template('upload_risk_factor_data.html', risk_factor=risk_factor)
 
@@ -1271,6 +1481,110 @@ def view_portfolio(id):
             holding.strategic_amount = None
             holding.diff_amount = None
             holding.diff_weight = None
+
+    # Calculate country exposures for choropleth map
+    country_exposures = {}
+    for holding in holdings:
+        if holding.calculated_amount and total_portfolio_value > 0 and holding.fund and holding.fund.benchmark:
+            # Calculate the weight of this holding in the portfolio
+            holding_weight = holding.calculated_amount / total_portfolio_value
+            
+            # Get country allocations for the fund's benchmark
+            benchmark_countries = BenchmarkCountries.query.filter_by(benchmark_id=holding.fund.benchmark_id).all()
+            
+            # Add weighted country allocations to the total
+            for country_alloc in benchmark_countries:
+                country_code = country_alloc.country
+                # Weight in portfolio = holding weight * country weight in benchmark
+                weight = holding_weight * country_alloc.weight / 100
+                country_exposures[country_code] = country_exposures.get(country_code, 0) + weight
+
+    # Get country names for hover text
+    country_names = {country.alpha_3: country.name for country in pycountry.countries}
+    
+    # Create list of (country_name, weight) tuples and sort by weight
+    country_weights = []
+    for code, weight in country_exposures.items():
+        country_name = country_names.get(code, code)
+        country_weights.append((country_name, weight * 100))  # Convert to percentage
+    
+    # Sort by weight descending and get top 10
+    top_10_countries = sorted(country_weights, key=lambda x: x[1], reverse=True)[:10]
+    
+    # Calculate sum of remaining countries
+    other_countries_weight = sum(weight for _, weight in country_weights[10:]) if len(country_weights) > 10 else 0
+
+    # Create choropleth map if we have country exposures
+    if country_exposures:
+        # Create hover text with formatted weights
+        hover_text = [
+            f"{country_names.get(code, code)}<br>Weight: {weight*100:.1f}%"
+            for code, weight in country_exposures.items()
+        ]
+
+        fig = go.Figure(data=go.Choropleth(
+            locations=list(country_exposures.keys()),
+            z=list(country_exposures.values()),
+            text=hover_text,
+            hoverinfo='text',
+            locationmode='ISO-3',
+            colorscale=[
+                [0, 'rgb(255, 255, 255)'],  # Start with white
+                [0.01, 'rgb(222, 235, 247)'],  # Very light blue
+                [0.5, 'rgb(106, 155, 195)'],  # Medium blue
+                [1, 'rgb(35, 69, 131)']  # Dark blue
+            ],
+            colorbar=dict(
+                title=dict(
+                    text="Weight",
+                    font=dict(size=12)
+                ),
+                thickness=15,
+                len=1,
+                tickformat='0%',
+                tickfont=dict(size=10),
+                x=1
+            ),
+            showscale=True,
+            zmin=0,
+            zauto=False,
+            zmax=max(country_exposures.values()) * 1.05,  # Add 5% margin
+            marker_line_color='rgb(220, 220, 220)',
+            marker_line_width=0.5,
+            marker_opacity=0.8
+        ))
+
+        fig.update_layout(
+            dragmode=False,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=30, b=0),
+            geo=dict(
+                showframe=True,
+                framecolor='rgb(220, 220, 220)',
+                framewidth=0.5,
+                showcoastlines=True,
+                projection_type='natural earth',
+                showland=True,
+                landcolor='rgb(250, 250, 250)',
+                showocean=True,
+                oceancolor='#f0f6fc',
+                showcountries=True,
+                countrycolor='rgb(220, 220, 220)',
+                coastlinecolor='rgb(220, 220, 220)',
+                projection_scale=1,
+                lonaxis=dict(range=[-180, 180]),
+                lataxis=dict(range=[-90, 90]),
+                showlakes=True,
+                lakecolor='rgb(240,240,240)',
+            ),
+            width=None,  # Allow responsive width
+            height=350
+        )
+
+        map_json = fig.to_json()
+    else:
+        map_json = None
     
     # Sort the grouped holdings according to ASSET_CLASSES order
     sorted_holdings_by_asset_class = {}
@@ -1314,7 +1628,10 @@ def view_portfolio(id):
                          total_weight_diff=total_weight_diff,
                          max_positive_holding_diff=max_positive_holding_diff,
                          max_negative_holding_diff=max_negative_holding_diff,
-                         max_asset_class_diff=max_asset_class_diff)
+                         max_asset_class_diff=max_asset_class_diff,
+                         map_json=map_json,
+                         top_10_countries=top_10_countries,
+                         other_countries_weight=other_countries_weight)
 
 
 @app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
@@ -2213,7 +2530,90 @@ def view_fund(id):
         flash('You do not have permission to view this fund', 'error')
         return redirect(url_for('get_funds'))
     
-    return render_template('view_fund.html', fund=fund)
+    # Get performance data ordered by date
+    performance_data = FundPerformance.query.filter_by(fund_id=id).order_by(FundPerformance.date).all()
+    
+    # Calculate cumulative performance and create plot
+    plot_json = None
+    if performance_data:
+        dates = []
+        cumulative_performance = []
+        cum_perf = 1.0  # Start at 100%
+        for perf in performance_data:
+            cum_perf *= (1 + perf.daily_performance/100)
+            dates.append(perf.date.strftime('%Y-%m-%d'))
+            cumulative_performance.append((cum_perf - 1) * 100)  # Convert to percentage
+                        
+        # Create Plotly figure
+        fig = go.Figure()
+        
+        # Add trace with cumulative returns
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=cumulative_performance,
+            mode='lines',
+            name='Cumulative Performance',
+            line=dict(
+                color='#2E5BFF',
+                width=2,
+                shape='spline'
+            ),
+            fill='tonexty',
+            fillcolor='rgba(46, 91, 255, 0.1)',
+            hovertemplate='%{x}<br>Return: %{y:.2f}%<extra></extra>'
+        ))
+        
+        # Enhanced layout
+        fig.update_layout(
+            showlegend=False,
+            margin=dict(l=40, r=20, t=20, b=40),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            xaxis=dict(
+                showgrid=True,
+                gridcolor='rgba(0,0,0,0.1)',
+                showline=True,
+                linecolor='rgba(0,0,0,0.2)',
+                linewidth=1,
+                title=None,
+                tickfont=dict(
+                    family='Inter',
+                    size=10,
+                    color='rgba(0,0,0,0.6)'
+                )
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor='rgba(0,0,0,0.1)',
+                showline=True,
+                linecolor='rgba(0,0,0,0.2)',
+                linewidth=1,
+                title=None,
+                ticksuffix='%',
+                tickfont=dict(
+                    family='Inter',
+                    size=10,
+                    color='rgba(0,0,0,0.6)'
+                ),
+                zeroline=True,
+                zerolinecolor='rgba(0,0,0,0.2)',
+                zerolinewidth=1
+            ),
+            hovermode='x unified',
+            hoverlabel=dict(
+                bgcolor='white',
+                font_size=12,
+                font_family="Inter"
+            )
+        )
+        
+        # Convert the figure to JSON for frontend
+        plot_json = fig.to_json()
+    else:
+        pass
+    return render_template('view_fund.html', 
+                         fund=fund,
+                         plot_json=plot_json)
 
 @app.route('/total_portfolio')
 @login_required
@@ -2308,10 +2708,331 @@ def total_portfolio():
         total_value=total_value
     )
 
+@app.route('/fund/<int:id>/upload_data', methods=['GET', 'POST'])
+@login_required
+@limiter.limit("10 per minute")
+def upload_fund_performance_data(id):
+    fund = Fund.query.get_or_404(id)
+    
+    # Check permissions - admins can upload to any fund, regular users only to their own
+    if not current_user.is_admin() and fund.user_id != current_user.id:
+        flash('You do not have permission to upload data to this fund.', 'error')
+        return redirect(url_for('view_fund', id=id))
+    
+    if request.method == 'POST':
+        # Check if the post request has the file part
+        if 'file' not in request.files:
+            return render_template('upload_fund_performance_data.html', 
+                                fund=fund,
+                                error='No file uploaded')
+        
+        file = request.files['file']
+        upload_mode = request.form.get('upload_mode', 'append')  # Get upload mode from form
+        
+        # Check if a file was selected
+        if file.filename == '':
+            return render_template('upload_fund_performance_data.html', 
+                                fund=fund,
+                                error='No file selected')
+
+        # Check file size
+        if request.content_length > MAX_FILE_SIZE:
+            return render_template('upload_fund_performance_data.html',
+                                fund=fund,
+                                error='File size exceeds maximum limit of 5MB')
+
+        # Validate file type and extension
+        if not allowed_file(file.filename):
+            return render_template('upload_fund_performance_data.html',
+                                fund=fund,
+                                error='Invalid file type. Only CSV files are allowed.')
+        
+        if file:
+            try:
+                # Try reading the first few bytes to check if file is actually a CSV
+                try:
+                    content_start = file.read(1024).decode('utf-8')
+                    file.seek(0)  # Reset file pointer
+                    
+                    # Check if content looks like CSV
+                    if ',' not in content_start and ';' not in content_start:
+                        raise ValueError("File does not appear to be a valid CSV. Please ensure it's comma or semicolon delimited.")
+                except UnicodeDecodeError:
+                    raise ValueError("File appears to be binary or not properly encoded. Please ensure it's a valid UTF-8 encoded CSV file.")
+
+                # Try different delimiters
+                try:
+                    df = pd.read_csv(file)
+                except:
+                    file.seek(0)
+                    try:
+                        df = pd.read_csv(file, sep=';')
+                    except:
+                        raise ValueError("Could not parse CSV file. Please ensure it uses comma (,) or semicolon (;) as delimiter.")
+
+                # Check if file is empty
+                if df.empty:
+                    raise ValueError("The CSV file is empty")
+                
+                # Check for minimum number of rows
+                if len(df) < 2:
+                    raise ValueError("CSV file must contain at least 2 rows of data")
+
+                # Check for maximum number of rows (e.g., 10000)
+                if len(df) > 10000:
+                    raise ValueError("CSV file contains too many rows. Maximum allowed is 10,000 rows.")
+                
+                # Try to parse dates with multiple formats
+                try:
+                    # First try automatic parsing
+                    df['date'] = pd.to_datetime(df['date'])
+                except ValueError:
+                    # If automatic parsing fails, try specific common formats
+                    date_formats = [
+                        '%Y-%m-%d',      # 2023-12-31
+                        '%d-%m-%Y',      # 31-12-2023
+                        '%m-%d-%Y',      # 12-31-2023
+                        '%Y/%m/%d',      # 2023/12/31
+                        '%d/%m/%Y',      # 31/12/2023
+                        '%m/%d/%Y',      # 12/31/2023
+                        '%d.%m.%Y',      # 31.12.2023
+                        '%Y.%m.%d',      # 2023.12.31
+                        '%m.%d.%Y'       # 12.31.2023
+                    ]
+                    
+                    parsed = False
+                    for date_format in date_formats:
+                        try:
+                            df['date'] = pd.to_datetime(df['date'], format=date_format)
+                            parsed = True
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if not parsed:
+                        raise ValueError("Could not parse dates. Please ensure dates are in a standard format (e.g., YYYY-MM-DD, DD-MM-YYYY, MM-DD-YYYY)")
+                
+                # Sort by date to ensure chronological order
+                df = df.sort_values('date')
+                
+                # Validate daily_return values
+                if not pd.to_numeric(df['daily_return'], errors='coerce').notna().all():
+                    raise ValueError("Invalid daily return values found. Please ensure all values are numeric.")
+                
+                # Check for duplicates
+                duplicates = df[df.duplicated(['date'], keep=False)]
+                if not duplicates.empty:
+                    duplicate_dates = duplicates['date'].dt.strftime('%Y-%m-%d').unique()
+                    raise ValueError(f"Duplicate dates found: {', '.join(duplicate_dates)}")
+                
+                # Validate date range
+                if df['date'].min() > df['date'].max():
+                    raise ValueError("Invalid date range: earliest date is after latest date")
+
+                # Start transaction
+                db.session.begin_nested()
+                
+                try:
+                    # Get the dates from the new data
+                    new_dates = set(date.date() for date in df['date'])
+                    
+                    # Get existing dates for this fund
+                    existing_dates = set(
+                        date[0] for date in 
+                        db.session.query(FundPerformance.date)
+                        .filter_by(fund_id=fund.id)
+                        .all()
+                    )
+                    
+                    # Initialize counters
+                    records_added = 0
+                    records_updated = 0
+                    records_skipped = 0
+                    
+                    if upload_mode == 'overwrite':
+                        # Delete records with matching dates if in overwrite mode
+                        FundPerformance.query.filter(
+                            FundPerformance.fund_id == fund.id,
+                            FundPerformance.date.in_(new_dates)
+                        ).delete(synchronize_session=False)
+                    
+                    # Insert new data
+                    for _, row in df.iterrows():
+                        date = row['date'].date()
+                        
+                        if date in existing_dates:
+                            if upload_mode == 'overwrite':
+                                # Add new record (old one was deleted)
+                                data_point = FundPerformance(
+                                    fund_id=fund.id,
+                                    date=date,
+                                    daily_performance=float(row['daily_return'])
+                                )
+                                db.session.add(data_point)
+                                records_updated += 1
+                            else:
+                                # Skip this record in append mode
+                                records_skipped += 1
+                        else:
+                            # Add new record for new date
+                            data_point = FundPerformance(
+                                fund_id=fund.id,
+                                date=date,
+                                daily_performance=float(row['daily_return'])
+                            )
+                            db.session.add(data_point)
+                            records_added += 1
+                    
+                    db.session.commit()
+                    
+                    # Prepare success message
+                    message_parts = []
+                    if records_added > 0:
+                        message_parts.append(f"{records_added} new records added")
+                    if records_updated > 0:
+                        message_parts.append(f"{records_updated} records updated")
+                    if records_skipped > 0:
+                        message_parts.append(f"{records_skipped} records skipped (dates already exist)")
+                    
+                    if not message_parts:
+                        flash('No new data was added to the database.', 'info')
+                    else:
+                        flash(f"Upload successful: {', '.join(message_parts)}!", 'success')
+                    
+                    return redirect(url_for('view_fund', id=fund.id))
+                    
+                except Exception as e:
+                    # Rollback to savepoint
+                    db.session.rollback()
+                    app.logger.error(f"Error uploading data for fund {id}: {str(e)}")
+                    raise ValueError(f"Database error: {str(e)}")
+            
+            except ValueError as ve:
+                return render_template('upload_fund_performance_data.html',
+                                    fund=fund,
+                                    error=str(ve))
+            except Exception as e:
+                app.logger.error(f"Unexpected error uploading data for fund {id}: {str(e)}")
+                return render_template('upload_fund_performance_data.html',
+                                    fund=fund,
+                                    error='An unexpected error occurred while processing the file')
+    
+    return render_template('upload_fund_performance_data.html', fund=fund)
+
+
+
+@app.route('/benchmark/<int:id>/countries', methods=['GET', 'POST'])
+@login_required
+def edit_benchmark_countries(id):
+    benchmark = Benchmark.query.get_or_404(id)
+    
+    # Check permissions
+    if not current_user.is_admin() and benchmark.user_id != current_user.id:
+        flash('You do not have permission to edit this benchmark', 'error')
+        return redirect(url_for('get_benchmarks'))
+    
+    # Get existing countries
+    countries = BenchmarkCountries.query.filter_by(benchmark_id=id).all()
+    
+    # Calculate total weight
+    total_weight = sum(country.weight for country in countries)
+    
+    # Get allocated country codes
+    allocated_countries = [country.country for country in countries]
+    
+    # Create dictionary of country names
+    country_names = {country.alpha_3: country.name for country in pycountry.countries}
+    
+    # Get list of available countries (not yet allocated)
+    available_countries = [(country.alpha_3, country.name) for country in pycountry.countries 
+                         if country.alpha_3 not in allocated_countries]
+    available_countries.sort(key=lambda x: x[1])  # Sort by country name
+    
+    # Handle form submission
+    if request.method == 'POST':
+        try:
+            # Update weights for existing countries
+            for country in countries:
+                weight = request.form.get(f'weight_{country.id}')
+                if weight is not None:
+                    country.weight = float(weight)
+            
+            db.session.commit()
+            flash('Country allocations updated successfully', 'success')
+            return redirect(url_for('edit_benchmark_countries', id=id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating country allocations: {str(e)}', 'error')
+    
+    return render_template('edit_benchmark_countries.html',
+                         benchmark=benchmark,
+                         countries=countries,
+                         total_weight=total_weight,
+                         available_countries=available_countries,
+                         country_names=country_names)
+
+@app.route('/benchmark/<int:id>/add_country', methods=['POST'])
+@login_required
+def add_benchmark_country(id):
+    benchmark = Benchmark.query.get_or_404(id)
+    
+    # Check permissions
+    if not current_user.is_admin() and benchmark.user_id != current_user.id:
+        flash('You do not have permission to edit this benchmark', 'error')
+        return redirect(url_for('get_benchmarks'))
+    
+    try:
+        # Validate country code
+        country_code = request.form.get('country')
+        if not pycountry.countries.get(alpha_3=country_code):
+            flash('Invalid country code', 'error')
+            return redirect(url_for('edit_benchmark_countries', id=id))
+        
+        # Create new country allocation
+        weight = float(request.form.get('weight', 0))
+        new_country = BenchmarkCountries(
+            benchmark_id=id,
+            country=country_code,
+            weight=weight
+        )
+        
+        db.session.add(new_country)
+        db.session.commit()
+        
+        flash('Country allocation added successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding country allocation: {str(e)}', 'error')
+    
+    return redirect(url_for('edit_benchmark_countries', id=id))
+
+@app.route('/delete_benchmark_country/<int:country_id>', methods=['POST'])
+@login_required
+def delete_benchmark_country(country_id):
+    country = BenchmarkCountries.query.get_or_404(country_id)
+    benchmark = Benchmark.query.get(country.benchmark_id)
+    
+    # Check permissions
+    if not current_user.is_admin() and benchmark.user_id != current_user.id:
+        return jsonify({'error': 'Permission denied'}), 403
+    
+    try:
+        db.session.delete(country)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+
 if __name__ == '__main__':
     with app.app_context():
-        # Create all tables
+        # Drop and recreate all tables to include new columns
+        # db.drop_all()
         db.create_all()
+            
         # Allow port to be set via environment variable or command-line argument
         port = 5004
         if len(sys.argv) > 1:

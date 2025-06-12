@@ -227,4 +227,20 @@
     }
 }
 </style>
+
+    <!-- Footer Separator -->
+    <div class="footer-separator mt-4">
+        <div class="separator-line"></div>
+        {% if current_user.is_admin() or (not benchmark.generic_benchmark and benchmark.user_id == current_user.id) %}
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <a href="{{ url_for('edit_benchmark', id=benchmark.id) }}" class="beautiful-link">
+                <i class="fas fa-edit me-2"></i>Edit Benchmark
+            </a>
+            <a href="{{ url_for('edit_benchmark_countries', id=benchmark.id) }}" class="beautiful-link">
+                <i class="fas fa-globe me-2"></i>Edit Country Allocation
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %} 
