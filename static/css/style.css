@@ -261,6 +261,7 @@ body {
     animation: cardFadeIn 0.5s ease-out;
     border-radius: 12px;
     overflow: hidden;
+    margin-bottom: 2rem;
 }
 
 @keyframes cardFadeIn {
