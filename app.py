@@ -21,7 +21,8 @@ import re
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 import pycountry
-
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 
 
@@ -1640,9 +1641,13 @@ def view_portfolio(id):
             ).order_by(FundPerformance.date).all()
             
             if perf_data:
-                # Create a dictionary of fund weights
+                # Create a dictionary of fund weights and names
                 fund_weights = {
                     holding.fund_id: holding.calculated_weight / 100 if holding.calculated_weight else 0
+                    for holding in holdings
+                }
+                fund_names = {
+                    holding.fund_id: holding.fund.fund_name
                     for holding in holdings
                 }
                 
@@ -1653,51 +1658,86 @@ def view_portfolio(id):
                         perf_by_date[date] = {}
                     perf_by_date[date][fund_id] = perf
 
-                # Calculate cumulative performance
-                dates = []
-                cumulative_performance = []
-                cum_perf = 1.0  # Start at 100%
+                # Calculate cumulative performance for portfolio and individual funds
+                dates = sorted(perf_by_date.keys())
+                portfolio_cum_perf = [1.0]  # Start at 100%
+                fund_cum_perfs = {fund_id: [1.0] for fund_id in fund_ids}
                 
-                for date in sorted(perf_by_date.keys()):
+                for date in dates[1:]:  # Skip first date as it's the base
                     # Calculate weighted daily return for the portfolio
-                    daily_return = 0
+                    daily_portfolio_return = 0
                     for fund_id, perf in perf_by_date[date].items():
                         weight = fund_weights.get(fund_id, 0)
-                        daily_return += weight * perf
+                        daily_portfolio_return += weight * perf
+                        
+                        # Calculate individual fund performance
+                        if fund_id in fund_cum_perfs:
+                            last_cum = fund_cum_perfs[fund_id][-1]
+                            fund_cum_perfs[fund_id].append(last_cum * (1 + perf/100))
                     
-                    # Update cumulative performance
-                    cum_perf *= (1 + daily_return/100)
-                    dates.append(date.strftime('%Y-%m-%d'))
-                    cumulative_performance.append((cum_perf - 1) * 100)
+                    # Update portfolio cumulative performance
+                    last_portfolio_cum = portfolio_cum_perf[-1]
+                    portfolio_cum_perf.append(last_portfolio_cum * (1 + daily_portfolio_return/100))
+                
+                # Convert dates to string format
+                date_strings = [date.strftime('%Y-%m-%d') for date in dates]
                 
                 # Create Plotly figure
                 fig = go.Figure()
                 
-                # Add trace with cumulative returns
+                # Add portfolio trace FIRST to ensure it appears first in legend
                 fig.add_trace(go.Scatter(
-                    x=dates,
-                    y=cumulative_performance,
+                    x=date_strings,
+                    y=[(p - 1) * 100 for p in portfolio_cum_perf],
                     mode='lines',
-                    name='Cumulative Performance',
+                    name='Total Portfolio',
                     line=dict(
                         color='#2E5BFF',
-                        width=2,
+                        width=3,
                         shape='spline'
                     ),
                     fill='tonexty',
                     fillcolor='rgba(46, 91, 255, 0.1)',
-                    hovertemplate='%{x}<br>Return: %{y:.2f}%<extra></extra>'
+                    hovertemplate='Strategy return: %{y:.2f}%<extra></extra>',
+                    showlegend=True
                 ))
                 
-                # Enhanced layout
+                # Add individual fund traces (hidden by default)
+                for fund_id, cum_perfs in fund_cum_perfs.items():
+                    fig.add_trace(go.Scatter(
+                        x=date_strings,
+                        y=[(p - 1) * 100 for p in cum_perfs],
+                        mode='lines',
+                        name=fund_names[fund_id],
+                        line=dict(
+                            width=1.5,
+                            shape='spline',
+                            dash='dot'
+                        ),
+                        opacity=1,
+                        hovertemplate=fund_names[fund_id] + ': %{y:.2f}%<extra></extra>',
+                        visible='legendonly',  # Hidden by default
+                        showlegend=True
+                    ))
+                
+                # Enhanced layout with legend below the chart
                 fig.update_layout(
-                    showlegend=False,
-                    margin=dict(l=40, r=20, t=20, b=40),
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=-0.3,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(size=10),
+                        traceorder="normal"  # Maintain the order traces were added
+                    ),
+                    margin=dict(l=40, r=20, t=20, b=100),  # Increased bottom margin for legend
                     plot_bgcolor='white',
                     paper_bgcolor='white',
                     xaxis=dict(
                         showgrid=True,
-                        gridcolor='rgba(0,0,0,0.1)',
+                        gridcolor='rgba(0,0,0,0.05)',
                         showline=True,
                         linecolor='rgba(0,0,0,0.2)',
                         linewidth=1,
@@ -1710,7 +1750,7 @@ def view_portfolio(id):
                     ),
                     yaxis=dict(
                         showgrid=True,
-                        gridcolor='rgba(0,0,0,0.1)',
+                        gridcolor='rgba(0,0,0,0.05)',
                         showline=True,
                         linecolor='rgba(0,0,0,0.2)',
                         linewidth=1,
@@ -1738,20 +1778,118 @@ def view_portfolio(id):
     # Calculate portfolio beta and create indicator
     beta_indicator_json = None
     duration_indicator_json = None
+    fx_indicator_json = None
+    developed_pie_json = None
+    rating_pie_json = None
+    bond_type_pie_json = None
     if holdings:
-        # Calculate weighted beta and duration
+        # Calculate weighted beta, duration and FX
         portfolio_beta = 0.0
         portfolio_duration = 0.0
+        portfolio_fx = 0.0
+        
+        # Initialize dictionaries for pie charts
+        developed_weights = {'Developed': 0.0, 'Emerging': 0.0}
+        rating_weights = {}
+        bond_type_weights = {}
+        
         for holding in holdings:
             if holding.calculated_weight and holding.fund.benchmark:
                 weight = holding.calculated_weight / 100  # Convert percentage to decimal
                 beta = holding.fund.benchmark.beta
                 duration = holding.fund.benchmark.mod_duration
+                fx = holding.fund.benchmark.fx
                 portfolio_beta += weight * beta
                 portfolio_duration += weight * duration
+                portfolio_fx += weight * fx
+                
+                # Aggregate weights for pie charts
+                developed = holding.fund.benchmark.developed
+                rating = holding.fund.benchmark.bond_rating
+                bond_type = holding.fund.benchmark.bond_type
+                
+                developed_weights[developed] = developed_weights.get(developed, 0) + weight
+                rating_weights[rating] = rating_weights.get(rating, 0) + weight
+                bond_type_weights[bond_type] = bond_type_weights.get(bond_type, 0) + weight
 
         portfolio_beta = round(portfolio_beta, 2)
         portfolio_duration = round(portfolio_duration, 2)
+        portfolio_fx = round(portfolio_fx, 2)
+
+        # Create developed markets pie chart
+        fig = go.Figure(data=[go.Pie(
+            labels=list(developed_weights.keys()),
+            values=list(developed_weights.values()),
+            hole=.3,
+            marker_colors=['#1a73e8', '#34a853'],
+            textinfo='percent',
+            textposition='inside'
+        )])
+        fig.update_layout(
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=300,
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="center",
+                x=0.5
+            )
+        )
+        developed_pie_json = fig.to_json()
+
+        # Create bond rating pie chart
+        fig = go.Figure(data=[go.Pie(
+            labels=list(rating_weights.keys()),
+            values=list(rating_weights.values()),
+            hole=.3,
+            marker_colors=['#1a73e8', '#34a853', '#fbbc05', '#ea4335'],
+            textinfo='percent',
+            textposition='inside'
+        )])
+        fig.update_layout(
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=300,
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="center",
+                x=0.5
+            )
+        )
+        rating_pie_json = fig.to_json()
+
+        # Create bond type pie chart
+        fig = go.Figure(data=[go.Pie(
+            labels=list(bond_type_weights.keys()),
+            values=list(bond_type_weights.values()),
+            hole=.3,
+            marker_colors=['#1a73e8', '#34a853', '#fbbc05', '#ea4335'],
+            textinfo='percent',
+            textposition='inside'
+        )])
+        fig.update_layout(
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=300,
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="center",
+                x=0.5
+            )
+        )
+        bond_type_pie_json = fig.to_json()
 
         # Create beta indicator
         fig = go.Figure(go.Indicator(
@@ -1763,19 +1901,19 @@ def view_portfolio(id):
             gauge={
                 'shape': 'angular',
                 'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                'bar': {'color': "#1a73e8"},
+                'bar': {'color': "#1a73e8", 'thickness': 0.6},
                 'bgcolor': "white",
                 'borderwidth': 0,
                 'bordercolor': 'gray',
-                'steps': [
+                 'steps': [
                     {'range': [0, 0.33], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
                     {'range': [0.33, 0.66], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
                     {'range': [0.66, 1], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
-                ],
+                ],                
                 'threshold': {
-                    'line': {'color': "red", 'width': 0},
-                    'thickness': 0.75,
-                    'value': 0.8
+                    'line': {'color': "black", 'width': 0},
+                    'thickness': 1,
+                    'value': portfolio_beta
                 }
             }
         ))
@@ -1784,8 +1922,8 @@ def view_portfolio(id):
         fig.update_layout(
             paper_bgcolor='white',
             plot_bgcolor='white',
-            margin=dict(l=20, r=20, t=10, b=10),
-            height=300
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=270
         )
 
         beta_indicator_json = fig.to_json()
@@ -1799,15 +1937,15 @@ def view_portfolio(id):
             number={'font': {'size': 25}},
             gauge={
                 'shape': 'angular',
-                'axis': {'range': [0, 10], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                'bar': {'color': "#1a73e8"},
+                'axis': {'range': [0, 6], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                'bar': {'color': "#1a73e8", 'thickness': 0.6},
                 'bgcolor': "white",
                 'borderwidth': 0,
                 'bordercolor': 'gray',
                 'steps': [
                     {'range': [0, 2], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
-                    {'range': [2, 5], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
-                    {'range': [5, 10], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
+                    {'range': [2, 4], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
+                    {'range': [4, 6], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
                 ],
                 'threshold': {
                     'line': {'color': "red", 'width': 0},
@@ -1822,11 +1960,142 @@ def view_portfolio(id):
             paper_bgcolor='white',
             plot_bgcolor='white',
             margin=dict(l=20, r=20, t=20, b=20),
-            height=300
+            height=270
         )
 
         duration_indicator_json = fig.to_json()
+
+        # Create FX indicator
+        fig = go.Figure(go.Indicator(
+            domain={'x': [0, 1], 'y': [0, 1]},
+            value=portfolio_fx,
+            mode="gauge+number",
+            title=None,
+            number={'font': {'size': 25}},
+            gauge={
+                'shape': 'angular',
+                'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                'bar': {'color': "#1a73e8", 'thickness': 0.6},
+                'bgcolor': "white",
+                'borderwidth': 0,
+                'bordercolor': 'gray',
+                'steps': [
+                    {'range': [0, 0.25], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
+                    {'range': [0.25, 0.5], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
+                    {'range': [0.5, 1], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
+                ],
+                'threshold': {
+                    'line': {'color': "red", 'width': 0},
+                    'thickness': 0.75,
+                    'value': 0.5
+                }
+            }
+        ))
+
+        # Update layout for clean look
+        fig.update_layout(
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=270
+        )
+
+        fx_indicator_json = fig.to_json()
     
+    # Create sunburst charts for strategic and actual weights
+    strategic_sunburst_json = None
+    actual_sunburst_json = None
+    
+    if holdings:
+        # Prepare data for strategic weights sunburst
+        strategic_ids = []
+        strategic_labels = []
+        strategic_parents = []
+        strategic_values = []
+        
+        # Prepare data for actual weights sunburst
+        actual_ids = []
+        actual_labels = []
+        actual_parents = []
+        actual_values = []
+        
+        # Add root node for both charts
+        strategic_ids.append("root")
+        strategic_labels.append("Portfolio")
+        strategic_parents.append("")
+        strategic_values.append(100)
+        
+        actual_ids.append("root")
+        actual_labels.append("Portfolio")
+        actual_parents.append("")
+        actual_values.append(100)
+        
+        # Add asset classes and holdings
+        for asset_class, holdings_list in holdings_by_asset_class.items():
+            # Add asset class to strategic chart
+            strategic_ids.append(asset_class)
+            strategic_labels.append(asset_class)
+            strategic_parents.append("root")
+            strategic_values.append(asset_class_strategic_sums[asset_class])
+            
+            # Add asset class to actual chart
+            actual_ids.append(asset_class)
+            actual_labels.append(asset_class)
+            actual_parents.append("root")
+            actual_values.append((asset_class_sums[asset_class] / total_portfolio_value * 100) if total_portfolio_value > 0 else 0)
+            
+            # Add holdings under each asset class
+            for holding in holdings_list:
+                # Add to strategic chart
+                strategic_ids.append(f"{asset_class}-{holding.fund.fund_name}")
+                strategic_labels.append(holding.fund.fund_name)
+                strategic_parents.append(asset_class)
+                strategic_values.append(holding.strategic_weight * 100)
+                
+                # Add to actual chart
+                actual_ids.append(f"{asset_class}-{holding.fund.fund_name}")
+                actual_labels.append(holding.fund.fund_name)
+                actual_parents.append(asset_class)
+                actual_values.append(holding.calculated_weight if holding.calculated_weight else 0)
+        
+        # Create strategic weights sunburst
+        strategic_fig = go.Figure(go.Sunburst(
+            ids=strategic_ids,
+            labels=strategic_labels,
+            parents=strategic_parents,
+            values=strategic_values,
+            branchvalues="total",
+            hovertemplate='<b>%{label}</b><br>Weight: %{value:.1f}%<extra></extra>'
+        ))
+        
+        strategic_fig.update_layout(
+            margin=dict(t=0, l=0, r=0, b=0),
+            height=400,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
+        
+        strategic_sunburst_json = strategic_fig.to_json()
+        
+        # Create actual weights sunburst
+        actual_fig = go.Figure(go.Sunburst(
+            ids=actual_ids,
+            labels=actual_labels,
+            parents=actual_parents,
+            values=actual_values,
+            branchvalues="total",
+            hovertemplate='<b>%{label}</b><br>Weight: %{value:.1f}%<extra></extra>'
+        ))
+        
+        actual_fig.update_layout(
+            margin=dict(t=0, l=0, r=0, b=0),
+            height=400,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
+        
+        actual_sunburst_json = actual_fig.to_json()
+
     return render_template('view_portfolio.html', 
                          portfolio=portfolio, 
                          holdings=holdings,
@@ -1848,7 +2117,13 @@ def view_portfolio(id):
                          other_countries_weight=other_countries_weight,
                          performance_plot_json=performance_plot_json,
                          beta_indicator_json=beta_indicator_json,
-                         duration_indicator_json=duration_indicator_json)
+                         duration_indicator_json=duration_indicator_json,
+                         fx_indicator_json=fx_indicator_json,
+                         developed_pie_json=developed_pie_json,
+                         rating_pie_json=rating_pie_json,
+                         bond_type_pie_json=bond_type_pie_json,
+                         strategic_sunburst_json=strategic_sunburst_json,
+                         actual_sunburst_json=actual_sunburst_json)
 
 
 @app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
@@ -2788,7 +3063,7 @@ def view_fund(id):
             paper_bgcolor='white',
             xaxis=dict(
                 showgrid=True,
-                gridcolor='rgba(0,0,0,0.1)',
+                gridcolor='rgba(0,0,0,0.05)',
                 showline=True,
                 linecolor='rgba(0,0,0,0.2)',
                 linewidth=1,
@@ -2801,7 +3076,7 @@ def view_fund(id):
             ),
             yaxis=dict(
                 showgrid=True,
-                gridcolor='rgba(0,0,0,0.1)',
+                gridcolor='rgba(0,0,0,0.05)',
                 showline=True,
                 linecolor='rgba(0,0,0,0.2)',
                 linewidth=1,

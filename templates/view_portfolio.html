@@ -6,27 +6,26 @@
 {{ super() }}
 <style>
     .table th {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
         border-bottom: 2px solid var(--border-color);
         font-weight: 600;
         padding: 0.25rem 0.25rem;
         height: 37px;
         color: var(--text-color);
     }
-    
+
     .table td {
         padding: 0.25rem 0.25rem;
         vertical-align: middle;
         height: 37px;
         font-size: 0.9rem;
     }
-    
+
     /* Asset Class Header Styling */
     .asset-class-header {
         background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
         border-top: 2px solid var(--border-color);
     }
-    
+
     .asset-class-title {
         font-size: 0.9rem;
         color: var(--primary-color);
@@ -34,38 +33,38 @@
         font-weight: 300;
         height: 27px;
     }
-    
+
     /* Holdings Row Styling */
     .holding-row {
         transition: all 0.2s ease;
     }
-    
+
     .holding-row:hover {
         background-color: rgba(45, 125, 237, 0.04) !important;
         transform: scale(1.002);
         box-shadow: 0 1px 4px rgba(5, 125, 237, 0.04);
     }
-    
+
     /* Price styling */
     .price-cell {
         position: relative;
     }
-    
+
     .price-cell.myprice-text {
         cursor: pointer;
     }
-    
+
     .myprice-text {
         color: var(--primary-color) !important;
         font-weight: 500;
     }
-    
+
     /* Sum Row Styling */
     .sum-row {
         background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
         border-top: 2px solid var(--border-color);
     }
-    
+
     .sum-title {
         font-size: 0.9rem;
         color: var(--primary-color);
@@ -73,44 +72,44 @@
         font-weight: 300;
         height: 27px;
     }
-    
+
     /* Fund name cell styling */
     .fund-name-cell {
         cursor: pointer;
         transition: color 0.2s ease;
     }
-    
+
     .fund-name-cell:hover {
         color: #000 !important;
         font-weight: 500;
     }
-    
+
     /* Difference bar styling */
     .diff-bar-container,
     .diff-bar,
     .holding-bar {
         display: none;
     }
-    
+
     .diff-value {
         font-weight: 500;
     }
-    
+
     .asset-class-header .diff-value,
     .sum-row .diff-value {
         font-weight: 500;
     }
-    
+
     .asset-class-header .diff-value.text-success,
     .sum-row .diff-value.text-success {
         color: #28a745 !important;
     }
-    
+
     .asset-class-header .diff-value.text-danger,
     .sum-row .diff-value.text-danger {
         color: #dc3545 !important;
     }
-    </style>
+</style>
 {% endblock %}
 
 
@@ -124,7 +123,7 @@
             <div class="title-stack">
                 <h1 class="page-title">{{ portfolio.portfolio_name }}</h1>
                 <h2 class="portfolio-subtitle">
-                  
+
                     Portfolio Overview
                 </h2>
             </div>
@@ -135,38 +134,89 @@
     </div>
 
 
-<div class="section-divider">
-    <span>PERFORMANCE</span>
-</div>
-
-<!-- Portfolio Performance Card -->
-<div class="card card-strategy">
-    <div class="card-header">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-chart-line me-2 text-primary"></i>
-            <h5 class="card-title mb-0">Strategy Performance</h5>
-        </div>
+    <div class="section-divider">
+        <span>PERFORMANCE</span>
     </div>
 
-    <div class="card-body p-4">
-        {% if performance_plot_json %}
-        <div id="performanceChart" style="width:100%; height:350px;"></div>
-        {% else %}
-        <div class="alert alert-info m-0">
-            <i class="fas fa-info-circle me-2"></i>No performance data available.
+    <!-- Portfolio Performance Card -->
+    <div class="card card-strategy">
+        <div class="card-header">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-chart-line me-2 text-primary"></i>
+                <h5 class="card-title mb-0">Strategy Performance</h5>
+            </div>
         </div>
-        {% endif %}
+
+        <div class=" card-body p-4">
+            {% if performance_plot_json %}
+            <div id="performanceChart" style="width:100%; height:350px;"></div>
+            {% else %}
+            <div class="alert alert-info m-0">
+                <i class="fas fa-info-circle me-2"></i>No performance data available.
+            </div>
+            {% endif %}
+        </div>
     </div>
-</div>
 
 
     <div class="section-divider">
-        <span>HOLDINGS</span>
+        <span>PORTFOLIO</span>
     </div>
 
-    <!-- Holdings Card using card-strategy class -->
-    <div class="card-strategy">
-        <div class="card-body">
+    <div class="card card-strategy">
+        <div class="card-header">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-chart-line me-2 text-primary"></i>
+                <h5 class="card-title mb-0">Portfolio</h5>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row" style="height: 470px;">
+                <!-- Strategic weights -->
+                <div class="col-lg-4 h-100">
+                    <div class="card card-strategy ">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-0"> Strategy description</h5>
+                            <hr>
+                            <p>
+                                aaa
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="card card-strategy " style="padding-left: 0.5cm; padding-right: 0.5cm; padding-top: 0cm; padding-bottom: 0cm;">
+                        <div class="card-body d-flex flex-column">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    {% if strategic_sunburst_json %}
+                                    <h5 class="card-title mb-0 text-center">Strategy</h5>
+                                    <div id="strategicSunburst" style="width:100%;"></div>
+                                    {% else %}
+                                    <div class="alert alert-info m-0">
+                                        <i class="fas fa-info-circle me-2"></i>No strategic allocation data available.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-lg-6">
+                                    <!-- Actual weights -->
+                                    {% if actual_sunburst_json %}
+                                    <h5 class="card-title mb-0 text-center">Portfolio</h5>
+                                    <div id="actualSunburst" style="width:100%;"></div>
+                                    {% else %}
+                                    <div class="alert alert-info m-0">
+                                        <i class="fas fa-info-circle me-2"></i>No actual allocation data available.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {% if holdings_by_asset_class %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="holdingsTable">
@@ -194,35 +244,42 @@
                                 <strong><i class="fas fa-layer-group me-2"></i>{{ asset_class }}</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(asset_class_sums[asset_class]) if asset_class in asset_class_sums else '0.00' }}</strong>
+                                <strong>€{{ "%.f"|format(asset_class_sums[asset_class]) if asset_class in
+                                    asset_class_sums else '0.00' }}</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(asset_class_strategic_sums[asset_class] * total_portfolio_value / 100) if asset_class in asset_class_strategic_sums else '0.00' }}</strong>
+                                <strong>€{{ "%.f"|format(asset_class_strategic_sums[asset_class] * total_portfolio_value
+                                    / 100) if asset_class in asset_class_strategic_sums else '0.00' }}</strong>
                             </td>
                             <td class="asset-class-title text-end">
                                 {% if asset_class in asset_class_diff_sums %}
-                                <span class="diff-value {{ 'text-success' if asset_class_diff_sums[asset_class] > 0 else 'text-danger' }}">
+                                <span
+                                    class="diff-value {{ 'text-success' if asset_class_diff_sums[asset_class] > 0 else 'text-danger' }}">
                                     €{{ "%.f"|format(asset_class_diff_sums[asset_class]) }}
                                 </span>
                                 {% endif %}
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>{{ "%.f"|format((asset_class_sums[asset_class] / total_portfolio_value * 100) if total_portfolio_value > 0 and asset_class in asset_class_sums else 0) }}%</strong>
+                                <strong>{{ "%.f"|format((asset_class_sums[asset_class] / total_portfolio_value * 100) if
+                                    total_portfolio_value > 0 and asset_class in asset_class_sums else 0) }}%</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>{{ "%.f"|format(asset_class_strategic_sums[asset_class]) if asset_class in asset_class_strategic_sums else '0.00' }}%</strong>
+                                <strong>{{ "%.f"|format(asset_class_strategic_sums[asset_class]) if asset_class in
+                                    asset_class_strategic_sums else '0.00' }}%</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <span class="diff-value {{ 'text-success' if asset_class_weight_diffs[asset_class] > 0 else 'text-danger' }}">
-                                    {{ "%.f"|format(asset_class_weight_diffs[asset_class]) if asset_class in asset_class_weight_diffs else '0.00' }}%
+                                <span
+                                    class="diff-value {{ 'text-success' if asset_class_weight_diffs[asset_class] > 0 else 'text-danger' }}">
+                                    {{ "%.f"|format(asset_class_weight_diffs[asset_class]) if asset_class in
+                                    asset_class_weight_diffs else '0.00' }}%
                                 </span>
                             </td>
                         </tr>
-                        
+
                         <!-- Holdings for this Asset Class -->
                         {% for holding in holdings %}
                         <tr class="holding-row" data-holding-id="{{ holding.id }}">
-                            <td class="text-truncate text-start fund-name-cell" style="max-width: 0; cursor: pointer;" 
+                            <td class="text-truncate text-start fund-name-cell" style="max-width: 0; cursor: pointer;"
                                 onclick="showLongName(this, '{{ holding.fund.long_name }}')">
                                 {{ holding.fund.fund_name }}
                             </td>
@@ -271,17 +328,19 @@
                         </tr>
                         {% endfor %}
                         {% endfor %}
-                        
+
                         <!-- Sum Row -->
                         <tr class="sum-row">
                             <td class="asset-class-title">
                                 <strong><i class="fas fa-calculator me-2"></i>Sum</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(total_portfolio_value) if total_portfolio_value else '0.00' }}</strong>
+                                <strong>€{{ "%.f"|format(total_portfolio_value) if total_portfolio_value else '0.00'
+                                    }}</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>€{{ "%.f"|format(total_strategic_weight * total_portfolio_value / 100) if total_strategic_weight else '0.00' }}</strong>
+                                <strong>€{{ "%.f"|format(total_strategic_weight * total_portfolio_value / 100) if
+                                    total_strategic_weight else '0.00' }}</strong>
                             </td>
                             <td class="asset-class-title text-end">
                                 {% if total_diff is not none %}
@@ -294,10 +353,12 @@
                                 <strong>{{ "%.f"|format(total_weight) if total_weight else '0.00' }}%</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <strong>{{ "%.f"|format(total_strategic_weight) if total_strategic_weight else '0.00' }}%</strong>
+                                <strong>{{ "%.f"|format(total_strategic_weight) if total_strategic_weight else '0.00'
+                                    }}%</strong>
                             </td>
                             <td class="asset-class-title text-end">
-                                <span class="diff-value {{ 'text-success' if total_weight_diff > 0 else 'text-danger' }}">
+                                <span
+                                    class="diff-value {{ 'text-success' if total_weight_diff > 0 else 'text-danger' }}">
                                     {{ "%.f"|format(total_weight_diff) if total_weight_diff is not none else '0.00' }}%
                                 </span>
                             </td>
@@ -319,85 +380,76 @@
         </div>
     </div>
 
+
+
     <div class="section-divider">
         <span>GEOGRAPHY</span>
     </div>
 
 
-<!-- Geographic Exposure Map -->
-<div class="card card-strategy">
+    <!-- Geographic Exposure Map -->
+    <div class="card card-strategy">
 
-    <div class="card-header">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-globe me-2 text-primary"></i>
-            <h5 class="card-title mb-0">Geographic Exposure</h5>
-           
-        </div>
-    </div>
+        <div class="card-header">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-globe me-2 text-primary"></i>
+                <h5 class="card-title mb-0">Geographic Exposure</h5>
 
-    <div class="card-body p-4">
-        <div class="row">
-            <div class="col-lg-8" style="padding-right: 50px; padding-left: 20px">
-            
-                {% if map_json %}
-                <div id="geographicMap" style="width:100%"></div>
-                {% else %}
-                <div class="alert alert-info m-0">
-                    <i class="fas fa-info-circle me-2"></i>No geographic exposure data available.
-                </div>
-                {% endif %}
-            </div>
-            <div class="col-lg-4">
-            
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Country</th>
-                                <th class="text-end">Weight</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for country, weight in top_10_countries %}
-                            <tr>
-                                <td style="height: 10px">{{ country }}</td>
-                                <td class="text-end" style="height: 10px">{{ "%.1f"|format(weight) }}%</td>
-                            </tr>
-                            {% endfor %}
-                            {% if other_countries_weight > 0 %}
-                            <tr class="border-top">
-                                <td><strong>Others</strong></td>
-                                <td class="text-end"><strong>{{ "%.1f"|format(other_countries_weight) }}%</strong></td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="section-divider">
-    <span>RISK</span>
-</div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-lg-8" style="padding-right: 50px; padding-left: 20px">
 
+                    {% if map_json %}
+                    <div id="geographicMap" style="width:100%"></div>
+                    {% else %}
+                    <div class="alert alert-info m-0">
+                        <i class="fas fa-info-circle me-2"></i>No geographic exposure data available.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-4">
 
-<!-- Geographic Exposure Map -->
-<div class="card card-strategy">
-
-    <div class="card-header">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-globe me-2 text-primary"></i>
-            <h5 class="card-title mb-0">Allocation</h5>
-           
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Country</th>
+                                    <th class="text-end">Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for country, weight in top_10_countries %}
+                                <tr>
+                                    <td style="height: 10px">{{ country }}</td>
+                                    <td class="text-end" style="height: 10px">{{ "%.1f"|format(weight) }}%</td>
+                                </tr>
+                                {% endfor %}
+                                {% if other_countries_weight > 0 %}
+                                <tr class="border-top">
+                                    <td><strong>Others</strong></td>
+                                    <td class="text-end"><strong>{{ "%.1f"|format(other_countries_weight) }}%</strong>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card-body">
-        <div class="row">
-            <div class="col-lg-4">
-                <div class="card card-body">
+    <div class="section-divider">
+        <span>RISK</span>
+    </div>
+
+
+    <div class="row" style="padding-bottom: 1cm;">
+        <div class="col-lg-4">
+            <div class="card card-strategy card-body" style="padding-bottom: 0cm;">
                 {% if beta_indicator_json %}
                 <h5 class="card-title mb-0">Beta</h5>
                 <div id="betaIndicator" style="width:100%;"></div>
@@ -406,189 +458,364 @@
                     <i class="fas fa-info-circle me-2"></i>No beta data available.
                 </div>
                 {% endif %}
-                </div>
             </div>
+        </div>
 
-            <div class="col-lg-4">
-                <div class="card card-body">
+        <div class="col-lg-4">
+            <div class="card card-strategy card-body" style="padding-bottom: 0cm;">
                 {% if duration_indicator_json %}
                 <h5 class="card-title mb-0">Duration</h5>
                 <div id="durationIndicator""></div>
                 {% else %}
-                <div class="alert alert-info m-0">
+                <div class=" alert alert-info m-0">
                     <i class="fas fa-info-circle me-2"></i>No duration data available.
                 </div>
                 {% endif %}
-                </div>
             </div>
+        </div>
 
-            <div class="col-lg-4">
-                {% if beta_indicator_json %}
-                <div id="betaIndicator" style="width:100%;"></div>
+        <div class="col-lg-4">
+            <div class="card card-strategy card-body" style="padding-bottom: 0cm;">
+                {% if fx_indicator_json %}
+                <h5 class="card-title mb-0">FX</h5>
+                <div id="fxIndicator" style="width:100%;"></div>
                 {% else %}
                 <div class="alert alert-info m-0">
-                    <i class="fas fa-info-circle me-2"></i>No beta data available.
+                    <i class="fas fa-info-circle me-2"></i>No FX data available.
                 </div>
                 {% endif %}
             </div>
-            
         </div>
+
     </div>
-</div>
 
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card card-strategy card-body" style="padding-bottom: 0cm;">
+                {% if developed_pie_json %}
+                <h5 class="card-title mb-0">Development</h5>
+                <div id="developedIndicator" style="width:100%;"></div>
+                {% else %}
+                <div class="alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No development data available.
+                </div>
+                {% endif %}
+            </div>
+        </div>
 
+        <div class="col-lg-4">
+            <div class="card card-strategy card-body" style="padding-bottom: 0cm;">
+                {% if rating_pie_json %}
+                <h5 class="card-title mb-0">Rating</h5>
+                <div id="ratingIndicator""></div>
+                {% else %}
+                <div class=" alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No rating data available.
+                </div>
+                {% endif %}
+            </div>
+        </div>
 
+        <div class="col-lg-4">
+            <div class="card card-strategy card-body" style="padding-bottom: 0cm;">
+                {% if bond_type_pie_json %}
+                <h5 class="card-title mb-0">Bond Type</h5>
+                <div id="bondTypeIndicator" style="width:100%;"></div>
+                {% else %}
+                <div class="alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No bond type data available.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
 
     <!-- Footer Separator -->
     <div class="footer-separator">
         <div class="separator-line"></div>
     </div>
-</div>
 
-{% endblock %}
+    {% endblock %}
 
-{% block scripts %}
-{{ super() }}
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    {% block scripts %}
+    {{ super() }}
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 
-<!-- Tooltip initialization -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-    
-    // Function to show long name tooltip
-    window.showLongName = function(element, longName) {
-        // Remove any existing tooltip
-        const existingTooltip = bootstrap.Tooltip.getInstance(element);
-        if (existingTooltip) {
-            existingTooltip.dispose();
-        }
-        
-        // Create new tooltip
-        const tooltip = new bootstrap.Tooltip(element, {
-            title: longName,
-            placement: 'top',
-            trigger: 'manual'
+    <!-- Tooltip initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Function to show long name tooltip
+            window.showLongName = function (element, longName) {
+                // Remove any existing tooltip
+                const existingTooltip = bootstrap.Tooltip.getInstance(element);
+                if (existingTooltip) {
+                    existingTooltip.dispose();
+                }
+
+                // Create new tooltip
+                const tooltip = new bootstrap.Tooltip(element, {
+                    title: longName,
+                    placement: 'top',
+                    trigger: 'manual'
+                });
+
+                // Show tooltip
+                tooltip.show();
+
+                // Hide tooltip after 3 seconds
+                setTimeout(() => {
+                    tooltip.hide();
+                }, 3000);
+            };
         });
-        
-        // Show tooltip
-        tooltip.show();
-        
-        // Hide tooltip after 3 seconds
-        setTimeout(() => {
-            tooltip.hide();
-        }, 3000);
-    };
+    </script>
+
+    <!-- Map initialization -->
+    {% if map_json %}
+    <script>
+        var mapData = JSON.parse('{{ map_json | safe }}');
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('geographicMap', mapData.data, mapData.layout, config);
+
+            // Make map responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('geographicMap');
+                }, 100);
+            });
+        });
+    </script>
+    {% endif %}
+
+    <!-- Performance chart initialization -->
+    {% if performance_plot_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var performanceData = JSON.parse('{{ performance_plot_json | safe }}');
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
+
+        Plotly.newPlot('performanceChart', performanceData.data, performanceData.layout, config);
+
+        // Make chart responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                Plotly.Plots.resize('performanceChart');
+            }, 100);
+        });
 });
-</script>
+    </script>
+    {% endif %}
 
-<!-- Map initialization -->
-{% if map_json %}
-<script>
-var mapData = {{ map_json | safe }};
-document.addEventListener('DOMContentLoaded', function() {
-    var config = {
-        displayModeBar: false,
-        responsive: true,
-        staticPlot: false,
-        displaylogo: false
-    };
-    
-    Plotly.newPlot('geographicMap', mapData.data, mapData.layout, config);
+    <!-- Beta indicator initialization -->
+    {% if beta_indicator_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var betaData = JSON.parse('{{ beta_indicator_json | safe }}');
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
 
-    // Make map responsive with debouncing
-    var resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            Plotly.Plots.resize('geographicMap');
-        }, 100);
-    });
+        Plotly.newPlot('betaIndicator', betaData.data, betaData.layout, config);
+
+        // Make indicator responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                Plotly.Plots.resize('betaIndicator');
+            }, 100);
+        });
 });
-</script>
-{% endif %}
+    </script>
+    {% endif %}
 
-<!-- Performance chart initialization -->
-{% if performance_plot_json %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var performanceData = {{ performance_plot_json | safe }};
-    var config = {
-        displayModeBar: false,
-        responsive: true,
-        staticPlot: false,
-        displaylogo: false
-    };
-    
-    Plotly.newPlot('performanceChart', performanceData.data, performanceData.layout, config);
 
-    // Make chart responsive with debouncing
-    var resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            Plotly.Plots.resize('performanceChart');
-        }, 100);
-    });
+    <!-- Duration indicator initialization -->
+    {% if duration_indicator_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var durationData = JSON.parse('{{ duration_indicator_json | safe }}');
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
+
+        Plotly.newPlot('durationIndicator', durationData.data, durationData.layout, config);
+
+        // Make indicator responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                Plotly.Plots.resize('durationIndicator');
+            }, 100);
+        });
 });
-</script>
-{% endif %}
+    </script>
+    {% endif %}
 
-<!-- Beta indicator initialization -->
-{% if beta_indicator_json %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var betaData = {{ beta_indicator_json | safe }};
-    var config = {
-        displayModeBar: false,
-        responsive: true,
-        staticPlot: false,
-        displaylogo: false
-    };
-    
-    Plotly.newPlot('betaIndicator', betaData.data, betaData.layout, config);
 
-    // Make indicator responsive with debouncing
-    var resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            Plotly.Plots.resize('betaIndicator');
-        }, 100);
-    });
+    <!-- FX indicator initialization -->
+    {% if fx_indicator_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var fxData = JSON.parse('{{ fx_indicator_json | safe }}');
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
+
+        Plotly.newPlot('fxIndicator', fxData.data, fxData.layout, config);
+
+        // Make indicator responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                Plotly.Plots.resize('fxIndicator');
+            }, 100);
+        });
 });
-</script>
-{% endif %}
+    </script>
+    {% endif %}
 
 
-<!-- Duration indicator initialization -->
-{% if duration_indicator_json %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var durationData = {{ duration_indicator_json | safe }};
-    var config = {
-        displayModeBar: false,
-        responsive: true,
-        staticPlot: false,
-        displaylogo: false
-    };
-    
-    Plotly.newPlot('durationIndicator', durationData.data, durationData.layout, config);
+    <!-- Developed indicator initialization -->
+    {% if developed_pie_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var developedData = JSON.parse('{{ developed_pie_json | safe }}');
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
 
-    // Make indicator responsive with debouncing
-    var resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            Plotly.Plots.resize('durationIndicator');
-        }, 100);
-    });
+        Plotly.newPlot('developedIndicator', developedData.data, developedData.layout, config);
+
+        // Make indicator responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                Plotly.Plots.resize('developedIndicator');
+            }, 100);
+        });
 });
-</script>
-{% endif %}
+    </script>
+    {% endif %}
 
-{% endblock %} 
+
+    <!-- Rating indicator initialization -->
+    {% if rating_pie_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var ratingData = JSON.parse('{{ rating_pie_json | safe }}');
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
+
+        Plotly.newPlot('ratingIndicator', ratingData.data, ratingData.layout, config);
+
+        // Make indicator responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                Plotly.Plots.resize('ratingIndicator');
+            }, 100);
+        });
+});
+    </script>
+    {% endif %}
+
+
+    <!-- Bond type indicator initialization -->
+    {% if bond_type_pie_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var bondTypeData = JSON.parse('{{ bond_type_pie_json | safe }}');
+        var config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false,
+            displaylogo: false
+        };
+
+        Plotly.newPlot('bondTypeIndicator', bondTypeData.data, bondTypeData.layout, config);
+
+        // Make indicator responsive with debouncing
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                Plotly.Plots.resize('bondTypeIndicator');
+            }, 100);
+        });
+});
+    </script>
+    {% endif %}
+
+
+
+    <!-- Strategic sunburst -->
+    {% if strategic_sunburst_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const d = JSON.parse('{{ strategic_sunburst_json | safe }}');
+        const cfg = { displayModeBar: false, responsive: true, staticPlot: false, displaylogo: false };
+        Plotly.newPlot('strategicSunburst', d.data, d.layout, cfg);
+        window.addEventListener('resize', () => Plotly.Plots.resize('strategicSunburst'));
+});
+    </script>
+    {% endif %}
+
+    <!-- Actual sunburst -->
+    {% if actual_sunburst_json %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const d = JSON.parse('{{ actual_sunburst_json | safe }}');
+        const cfg = { displayModeBar: false, responsive: true, staticPlot: false, displaylogo: false };
+        Plotly.newPlot('actualSunburst', d.data, d.layout, cfg);
+        window.addEventListener('resize', () => Plotly.Plots.resize('actualSunburst'));
+});
+    </script>
+    {% endif %}
+
+
+    {% endblock %}
