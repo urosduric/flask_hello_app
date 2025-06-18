@@ -142,13 +142,24 @@
     <div class="card card-strategy">
         <div class="card-header">
             <div class="d-flex align-items-center">
-                <i class="fas fa-chart-line me-2 text-primary"></i>
-                <h5 class="card-title mb-0">Strategy Performance</h5>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                    <h5 class="card-title mb-0 me-3">Strategy Performance</h5>
+                </div>
             </div>
         </div>
 
         <div class=" card-body p-4">
             {% if performance_plot_json %}
+            <!-- Period selector buttons -->
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='ytd') }}" 
+                   class="btn {{ 'btn-primary' if period == 'ytd' else 'btn-outline-primary' }}">YTD</a>
+                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='1m') }}" 
+                   class="btn {{ 'btn-primary' if period == '1m' else 'btn-outline-primary' }}">1M</a>
+                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='1y') }}" 
+                   class="btn {{ 'btn-primary' if period == '1y' else 'btn-outline-primary' }}">1Y</a>
+            </div>
             <div id="performanceChart" style="width:100%; height:350px;"></div>
             {% else %}
             <div class="alert alert-info m-0">
@@ -163,7 +174,7 @@
         <span>PORTFOLIO</span>
     </div>
 
-    <div class="card card-strategy">
+    <div class="card card-strategy h-100">
         <div class="card-header">
             <div class="d-flex align-items-center">
                 <i class="fas fa-chart-line me-2 text-primary"></i>
@@ -171,47 +182,46 @@
             </div>
         </div>
         <div class="card-body p-4">
-            <div class="row" style="height: 470px;">
-                <!-- Strategic weights -->
-                <div class="col-lg-4 h-100">
-                    <div class="card card-strategy ">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title mb-0"> Strategy description</h5>
+            <div class="card" style="border: none;">
+                <div class="card-body p-4" >
+                    <div class="row h-100">
+                        <!-- Strategy Description Column -->
+                        <div class="col-lg-4 d-flex flex-column" style="padding-right: 40px;">
+                            <h5 class="card-title mb-0">Strategy Description</h5>
                             <hr>
-                            <p>
-                                aaa
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-8">
-                    <div class="card card-strategy " style="padding-left: 0.5cm; padding-right: 0.5cm; padding-top: 0cm; padding-bottom: 0cm;">
-                        <div class="card-body d-flex flex-column">
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    {% if strategic_sunburst_json %}
-                                    <h5 class="card-title mb-0 text-center">Strategy</h5>
-                                    <div id="strategicSunburst" style="width:100%;"></div>
+                            <div class="flex-grow-1 d-flex align-items-start">
+                                <p class="mb-0" style="text-align: justify; line-height: 1.6; color: #495057; font-size: 0.95rem;">
+                                    {% if strategy_description and strategy_description.strip() %}
+                                        {{ strategy_description }}
                                     {% else %}
-                                    <div class="alert alert-info m-0">
-                                        <i class="fas fa-info-circle me-2"></i>No strategic allocation data available.
-                                    </div>
+                                        <em class="text-muted">No strategy description available. You can add one in the portfolio strategy settings.</em>
                                     {% endif %}
-                                </div>
-                                
-                                <div class="col-lg-6">
-                                    <!-- Actual weights -->
-                                    {% if actual_sunburst_json %}
-                                    <h5 class="card-title mb-0 text-center">Portfolio</h5>
-                                    <div id="actualSunburst" style="width:100%;"></div>
-                                    {% else %}
-                                    <div class="alert alert-info m-0">
-                                        <i class="fas fa-info-circle me-2"></i>No actual allocation data available.
-                                    </div>
-                                    {% endif %}
-                                </div>
+                                </p>
                             </div>
+                        </div>
+
+                        <!-- Strategic Sunburst Column -->
+                        <div class="col-lg-4 d-flex flex-column">
+                            {% if strategic_sunburst_json %}
+                            <h5 class="card-title mb-0 text-center">Strategy</h5>
+                            <div id="strategicSunburst" style="width:100%;"></div>
+                            {% else %}
+                            <div class="alert alert-info m-0">
+                                <i class="fas fa-info-circle me-2"></i>No strategic allocation data available.
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Actual Sunburst Column -->
+                        <div class="col-lg-4 d-flex flex-column">
+                            {% if actual_sunburst_json %}
+                            <h5 class="card-title mb-0 text-center">Portfolio</h5>
+                            <div id="actualSunburst" style="width:100%;"></div>
+                            {% else %}
+                            <div class="alert alert-info m-0">
+                                <i class="fas fa-info-circle me-2"></i>No actual allocation data available.
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -377,6 +387,14 @@
                 </a>
             </div>
             {% endif %}
+            <hr class="my-4" style="opacity: 0.1;">
+
+            <a href="{{ url_for('get_funds') }}">
+                Edit Strategy
+            </a>
+            <a href="{{ url_for('get_funds') }}">
+                Edit Holdings
+            </a>
         </div>
     </div>
 

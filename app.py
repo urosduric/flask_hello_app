@@ -1394,8 +1394,9 @@ def new_portfolio():
     return render_template('new_portfolio.html')
 
 @app.route('/view_portfolio/<int:id>')
+@app.route('/view_portfolio/<int:id>/<period>')
 @login_required
-def view_portfolio(id):
+def view_portfolio(id, period='1m'):
     from some_data import ASSET_CLASSES
     
     portfolio = Portfolio.query.filter_by(id=id, user_id=current_user.id).first_or_404()
@@ -1616,6 +1617,12 @@ def view_portfolio(id):
 
     # Calculate portfolio performance
     performance_plot_json = None
+    total_performance = 0  # Initialize total performance
+    
+    # Validate and set period
+    if period not in ['ytd', '1m', '1y']:
+        period = '1m'  # Default to 1 month if invalid period
+    
     if holdings:
         # Get all fund IDs
         fund_ids = [holding.fund_id for holding in holdings]
@@ -1626,8 +1633,14 @@ def view_portfolio(id):
             .scalar()
         
         if latest_date:
-            # Calculate start date (1 year before latest date)
-            start_date = latest_date - timedelta(days=365)
+            # Calculate start date based on period
+            if period == '1m':
+                start_date = latest_date - timedelta(days=30)
+            elif period == 'ytd':
+                # Year to date - start from January 1st of the current year
+                start_date = latest_date.replace(month=1, day=1)
+            else:  # 1y
+                start_date = latest_date - timedelta(days=365)
             
             # Get performance data for all funds in the date range
             perf_data = db.session.query(
@@ -1689,12 +1702,16 @@ def view_portfolio(id):
                 fig.add_trace(go.Scatter(
                     x=date_strings,
                     y=[(p - 1) * 100 for p in portfolio_cum_perf],
-                    mode='lines',
+                    mode='lines+markers',
                     name='Total Portfolio',
                     line=dict(
                         color='#2E5BFF',
-                        width=3,
-                        shape='spline'
+                        width=3
+                    ),
+                    marker=dict(
+                        color='#2E5BFF',
+                        size=6,
+                        opacity=0  # Hide markers by default, show only on hover
                     ),
                     fill='tonexty',
                     fillcolor='rgba(46, 91, 255, 0.1)',
@@ -1711,7 +1728,6 @@ def view_portfolio(id):
                         name=fund_names[fund_id],
                         line=dict(
                             width=1.5,
-                            shape='spline',
                             dash='dot'
                         ),
                         opacity=1,
@@ -1735,6 +1751,21 @@ def view_portfolio(id):
                     margin=dict(l=40, r=20, t=20, b=100),  # Increased bottom margin for legend
                     plot_bgcolor='white',
                     paper_bgcolor='white',
+                    annotations=[
+                        dict(
+                            x=date_strings[-1],  # Last date
+                            y=(portfolio_cum_perf[-1] - 1) * 100,  # Final portfolio performance as percentage
+                            text=f"{(portfolio_cum_perf[-1] - 1) * 100:.1f}%",  # Format as percentage
+                            showarrow=False,  # Remove arrow
+                            xanchor="left",  # Position text to the left of the point
+                            yanchor="middle",  # Center vertically on the point
+                            xshift=10,  # Shift slightly to the right of the line end
+                            bgcolor="rgba(46, 91, 255, 0.1)",
+                            bordercolor="#2E5BFF",
+                            borderwidth=1,
+                            font=dict(color="#2E5BFF", size=12, family="Inter")
+                        )
+                    ],
                     xaxis=dict(
                         showgrid=True,
                         gridcolor='rgba(0,0,0,0.05)',
@@ -1746,7 +1777,8 @@ def view_portfolio(id):
                             family='Inter',
                             size=10,
                             color='rgba(0,0,0,0.6)'
-                        )
+                        ),
+                        showspikes=False
                     ),
                     yaxis=dict(
                         showgrid=True,
@@ -1763,7 +1795,8 @@ def view_portfolio(id):
                         ),
                         zeroline=True,
                         zerolinecolor='rgba(0,0,0,0.2)',
-                        zerolinewidth=1
+                        zerolinewidth=1,
+                        showspikes=False
                     ),
                     hovermode='x unified',
                     hoverlabel=dict(
@@ -1774,6 +1807,7 @@ def view_portfolio(id):
                 )
                 
                 performance_plot_json = fig.to_json()
+                total_performance = portfolio_cum_perf[-1] - 1
     
     # Calculate portfolio beta and create indicator
     beta_indicator_json = None
@@ -2048,13 +2082,13 @@ def view_portfolio(id):
             for holding in holdings_list:
                 # Add to strategic chart
                 strategic_ids.append(f"{asset_class}-{holding.fund.fund_name}")
-                strategic_labels.append(holding.fund.fund_name)
+                strategic_labels.append(holding.fund.one_word_name)  # Use one_word_name instead of fund_name
                 strategic_parents.append(asset_class)
                 strategic_values.append(holding.strategic_weight * 100)
                 
                 # Add to actual chart
                 actual_ids.append(f"{asset_class}-{holding.fund.fund_name}")
-                actual_labels.append(holding.fund.fund_name)
+                actual_labels.append(holding.fund.one_word_name)     # Use one_word_name instead of fund_name
                 actual_parents.append(asset_class)
                 actual_values.append(holding.calculated_weight if holding.calculated_weight else 0)
         
@@ -2065,6 +2099,9 @@ def view_portfolio(id):
             parents=strategic_parents,
             values=strategic_values,
             branchvalues="total",
+            textinfo="label",        # Show only labels (names)
+            textfont_size=12,        # Set readable font size
+            rotation=90,             # Start from top (12 o'clock) and go clockwise
             hovertemplate='<b>%{label}</b><br>Weight: %{value:.1f}%<extra></extra>'
         ))
         
@@ -2084,6 +2121,9 @@ def view_portfolio(id):
             parents=actual_parents,
             values=actual_values,
             branchvalues="total",
+            textinfo="label",        # Show only labels (names)
+            textfont_size=12,        # Set readable font size
+            rotation=90,             # Start from top (12 o'clock) and go clockwise
             hovertemplate='<b>%{label}</b><br>Weight: %{value:.1f}%<extra></extra>'
         ))
         
@@ -2116,6 +2156,8 @@ def view_portfolio(id):
                          top_10_countries=top_10_countries,
                          other_countries_weight=other_countries_weight,
                          performance_plot_json=performance_plot_json,
+                         period=period,
+                         total_performance=total_performance * 100,  # Convert to percentage
                          beta_indicator_json=beta_indicator_json,
                          duration_indicator_json=duration_indicator_json,
                          fx_indicator_json=fx_indicator_json,
@@ -2123,7 +2165,8 @@ def view_portfolio(id):
                          rating_pie_json=rating_pie_json,
                          bond_type_pie_json=bond_type_pie_json,
                          strategic_sunburst_json=strategic_sunburst_json,
-                         actual_sunburst_json=actual_sunburst_json)
+                         actual_sunburst_json=actual_sunburst_json,
+                         strategy_description=portfolio.strategy_description)
 
 
 @app.route('/edit_portfolio/<int:id>', methods=['GET', 'POST'])
@@ -3072,7 +3115,8 @@ def view_fund(id):
                     family='Inter',
                     size=10,
                     color='rgba(0,0,0,0.6)'
-                )
+                ),
+                showspikes=False
             ),
             yaxis=dict(
                 showgrid=True,
@@ -3089,7 +3133,8 @@ def view_fund(id):
                 ),
                 zeroline=True,
                 zerolinecolor='rgba(0,0,0,0.2)',
-                zerolinewidth=1
+                zerolinewidth=1,
+                showspikes=False
             ),
             hovermode='x unified',
             hoverlabel=dict(
