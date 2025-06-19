@@ -1926,112 +1926,166 @@ def view_portfolio(id, period='1m'):
         bond_type_pie_json = fig.to_json()
 
         # Create beta indicator
-        fig = go.Figure(go.Indicator(
-            domain={'x': [0, 1], 'y': [0, 1]},
-            value=portfolio_beta,
-            mode="gauge+number",
-            title=None,
-            number={'font': {'size': 25}},
-            gauge={
-                'shape': 'angular',
-                'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                'bar': {'color': "#1a73e8", 'thickness': 0.6},
-                'bgcolor': "white",
-                'borderwidth': 0,
-                'bordercolor': 'gray',
-                 'steps': [
-                    {'range': [0, 0.33], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
-                    {'range': [0.33, 0.66], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
-                    {'range': [0.66, 1], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
-                ],                
-                'threshold': {
-                    'line': {'color': "black", 'width': 0},
-                    'thickness': 1,
-                    'value': portfolio_beta
-                }
-            }
+        # Determine color based on beta value
+        if portfolio_beta <= 0.3:
+            bar_color = '#10B981'  # Green
+        elif portfolio_beta <= 0.6:
+            bar_color = '#F59E0B'  # Yellow/Orange
+        else:
+            bar_color = '#EF4444'  # Red
+
+        fig = go.Figure()
+
+        # Add horizontal bar
+        fig.add_trace(go.Bar(
+            x=[portfolio_beta],
+            y=['Beta'],
+            orientation='h',
+            marker=dict(color=bar_color),
+            showlegend=False,
+            hovertemplate='Beta: %{x:.2f}<extra></extra>'
         ))
 
-        # Update layout for clean look
+        # Add text annotation for the value on the right side
+        fig.add_annotation(
+            x=portfolio_beta + 0.05,  # Position slightly to the right of the bar
+            y=0,  # Center on the bar
+            text=f'{portfolio_beta:.2f}',
+            showarrow=False,
+            font=dict(size=16, color='black'),
+            xanchor='left'
+        )
+
+        # Update layout
         fig.update_layout(
+            xaxis=dict(
+                range=[0, 1],
+                showgrid=False,
+                showticklabels=True,
+                title=None,
+                fixedrange=True
+            ),
+            yaxis=dict(
+                showgrid=False,
+                showticklabels=False,
+                title=None,
+                fixedrange=True
+            ),
             paper_bgcolor='white',
             plot_bgcolor='white',
-            margin=dict(l=20, r=20, t=20, b=20),
-            height=270
+            margin=dict(l=10, r=50, t=10, b=10),
+            height=80,
+            bargap=0.3
         )
 
         beta_indicator_json = fig.to_json()
 
         # Create duration indicator
-        fig = go.Figure(go.Indicator(
-            domain={'x': [0, 1], 'y': [0, 1]},
-            value=portfolio_duration,
-            mode="gauge+number",
-            title=None,
-            number={'font': {'size': 25}},
-            gauge={
-                'shape': 'angular',
-                'axis': {'range': [0, 6], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                'bar': {'color': "#1a73e8", 'thickness': 0.6},
-                'bgcolor': "white",
-                'borderwidth': 0,
-                'bordercolor': 'gray',
-                'steps': [
-                    {'range': [0, 2], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
-                    {'range': [2, 4], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
-                    {'range': [4, 6], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
-                ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 0},
-                    'thickness': 0.75,
-                    'value': 7
-                }
-            }
+        # Determine color based on duration value
+        if portfolio_duration <= 2:
+            bar_color = '#10B981'  # Green
+        elif portfolio_duration <= 3:
+            bar_color = '#F59E0B'  # Yellow/Orange
+        else:
+            bar_color = '#EF4444'  # Red
+
+        fig = go.Figure()
+
+        # Add horizontal bar
+        fig.add_trace(go.Bar(
+            x=[portfolio_duration],
+            y=['Duration'],
+            orientation='h',
+            marker=dict(color=bar_color),
+            showlegend=False,
+            hovertemplate='Duration: %{x:.2f}<extra></extra>'
         ))
 
-        # Update layout for clean look
+        # Add text annotation for the value on the right side
+        fig.add_annotation(
+            x=portfolio_duration + 0.3,  # Position slightly to the right of the bar (larger offset for 0-6 scale)
+            y=0,  # Center on the bar
+            text=f'{portfolio_duration:.2f}',
+            showarrow=False,
+            font=dict(size=16, color='black'),
+            xanchor='left'
+        )
+
+        # Update layout
         fig.update_layout(
+            xaxis=dict(
+                range=[0, 6],
+                showgrid=False,
+                showticklabels=True,
+                title=None,
+                fixedrange=True
+            ),
+            yaxis=dict(
+                showgrid=False,
+                showticklabels=False,
+                title=None,
+                fixedrange=True
+            ),
             paper_bgcolor='white',
             plot_bgcolor='white',
-            margin=dict(l=20, r=20, t=20, b=20),
-            height=270
+            margin=dict(l=10, r=50, t=10, b=10),
+            height=80,
+            bargap=0.3
         )
 
         duration_indicator_json = fig.to_json()
 
         # Create FX indicator
-        fig = go.Figure(go.Indicator(
-            domain={'x': [0, 1], 'y': [0, 1]},
-            value=portfolio_fx,
-            mode="gauge+number",
-            title=None,
-            number={'font': {'size': 25}},
-            gauge={
-                'shape': 'angular',
-                'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                'bar': {'color': "#1a73e8", 'thickness': 0.6},
-                'bgcolor': "white",
-                'borderwidth': 0,
-                'bordercolor': 'gray',
-                'steps': [
-                    {'range': [0, 0.25], 'color': 'rgba(46, 204, 113, 0.3)'},  # green
-                    {'range': [0.25, 0.5], 'color': 'rgba(241, 196, 15, 0.4)'},  # yellow
-                    {'range': [0.5, 1], 'color': 'rgba(231, 76, 60, 0.5)'}  # red
-                ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 0},
-                    'thickness': 0.75,
-                    'value': 0.5
-                }
-            }
+        # Determine color based on FX value
+        if portfolio_fx <= 0.25:
+            bar_color = '#10B981'  # Green
+        elif portfolio_fx <= 0.5:
+            bar_color = '#F59E0B'  # Yellow/Orange
+        else:
+            bar_color = '#EF4444'  # Red
+
+        fig = go.Figure()
+
+        # Add horizontal bar
+        fig.add_trace(go.Bar(
+            x=[portfolio_fx],
+            y=['FX'],
+            orientation='h',
+            marker=dict(color=bar_color),
+            showlegend=False,
+            hovertemplate='FX: %{x:.2f}<extra></extra>'
         ))
 
-        # Update layout for clean look
+        # Add text annotation for the value on the right side
+        fig.add_annotation(
+            x=portfolio_fx + 0.05,  # Position slightly to the right of the bar
+            y=0,  # Center on the bar
+            text=f'{portfolio_fx:.2f}',
+            showarrow=False,
+            font=dict(size=16, color='black'),
+            xanchor='left'
+        )
+
+        # Update layout
         fig.update_layout(
+            xaxis=dict(
+                range=[0, 1],
+                showgrid=False,
+                showticklabels=True,
+                title=None,
+                fixedrange=True
+            ),
+            yaxis=dict(
+                showgrid=False,
+                showticklabels=False,
+                title=None,
+                fixedrange=True
+            ),
             paper_bgcolor='white',
             plot_bgcolor='white',
-            margin=dict(l=20, r=20, t=20, b=20),
-            height=270
+            margin=dict(l=10, r=50, t=10, b=10),
+            height=80,
+            bargap=0.3
         )
 
         fx_indicator_json = fig.to_json()

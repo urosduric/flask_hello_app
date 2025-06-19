@@ -153,12 +153,12 @@
             {% if performance_plot_json %}
             <!-- Period selector buttons -->
             <div class="btn-group btn-group-sm" role="group">
-                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='ytd') }}" 
-                   class="btn {{ 'btn-primary' if period == 'ytd' else 'btn-outline-primary' }}">YTD</a>
-                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='1m') }}" 
-                   class="btn {{ 'btn-primary' if period == '1m' else 'btn-outline-primary' }}">1M</a>
-                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='1y') }}" 
-                   class="btn {{ 'btn-primary' if period == '1y' else 'btn-outline-primary' }}">1Y</a>
+                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='ytd') }}"
+                    class="btn {{ 'btn-primary' if period == 'ytd' else 'btn-outline-primary' }}">YTD</a>
+                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='1m') }}"
+                    class="btn {{ 'btn-primary' if period == '1m' else 'btn-outline-primary' }}">1M</a>
+                <a href="{{ url_for('view_portfolio', id=portfolio.id, period='1y') }}"
+                    class="btn {{ 'btn-primary' if period == '1y' else 'btn-outline-primary' }}">1Y</a>
             </div>
             <div id="performanceChart" style="width:100%; height:350px;"></div>
             {% else %}
@@ -174,7 +174,7 @@
         <span>PORTFOLIO</span>
     </div>
 
-    <div class="card card-strategy h-100">
+    <div class="card card-strategy h-100" style="border: none;">
         <div class="card-header">
             <div class="d-flex align-items-center">
                 <i class="fas fa-chart-line me-2 text-primary"></i>
@@ -183,18 +183,20 @@
         </div>
         <div class="card-body p-4">
             <div class="card" style="border: none;">
-                <div class="card-body p-4" >
+                <div class="card-body p-4">
                     <div class="row h-100">
                         <!-- Strategy Description Column -->
                         <div class="col-lg-4 d-flex flex-column" style="padding-right: 40px;">
                             <h5 class="card-title mb-0">Strategy Description</h5>
                             <hr>
                             <div class="flex-grow-1 d-flex align-items-start">
-                                <p class="mb-0" style="text-align: justify; line-height: 1.6; color: #495057; font-size: 0.95rem;">
+                                <p class="mb-0"
+                                    style="text-align: justify; line-height: 1.6; color: #495057; font-size: 0.95rem;">
                                     {% if strategy_description and strategy_description.strip() %}
-                                        {{ strategy_description }}
+                                    {{ strategy_description }}
                                     {% else %}
-                                        <em class="text-muted">No strategy description available. You can add one in the portfolio strategy settings.</em>
+                                    <em class="text-muted">No strategy description available. You can add one in the
+                                        portfolio strategy settings.</em>
                                     {% endif %}
                                 </p>
                             </div>
@@ -211,7 +213,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        
+
                         <!-- Actual Sunburst Column -->
                         <div class="col-lg-4 d-flex flex-column">
                             {% if actual_sunburst_json %}
@@ -387,14 +389,24 @@
                 </a>
             </div>
             {% endif %}
+
+
             <hr class="my-4" style="opacity: 0.1;">
 
-            <a href="{{ url_for('get_funds') }}">
-                Edit Strategy
-            </a>
-            <a href="{{ url_for('get_funds') }}">
-                Edit Holdings
-            </a>
+            <div class="d-flex justify-content-end gap-3">
+                <a href="{{ url_for('portfolio_strategy', id=portfolio.id) }}" class="text-muted text-decoration-none"
+                    style="font-size: 0.875rem;">
+                    <i class="fas fa-edit me-1"></i>Edit Strategy
+                </a>
+                <a href="{{ url_for('portfolio_holdings', id=portfolio.id) }}" class="text-muted text-decoration-none"
+                    style="font-size: 0.875rem;">
+                    <i class="fas fa-coins me-1"></i>Edit Holdings
+                </a>
+            </div>
+
+
+
+
         </div>
     </div>
 
@@ -467,15 +479,34 @@
 
     <div class="row" style="padding-bottom: 1cm;">
         <div class="col-lg-4">
-            <div class="card card-strategy card-body" style="padding-bottom: 0cm;">
+            <div class="card card-strategy card-body p-4">
                 {% if beta_indicator_json %}
-                <h5 class="card-title mb-0">Beta</h5>
-                <div id="betaIndicator" style="width:100%;"></div>
+                <h5 class="card-title">Beta</h5>
+                <div id="betaIndicator" style="width:100%; padding-bottom: 0.5cm;"></div>
                 {% else %}
                 <div class="alert alert-info m-0">
                     <i class="fas fa-info-circle me-2"></i>No beta data available.
                 </div>
                 {% endif %}
+
+                {% if duration_indicator_json %}
+                <h5 class="card-title">Duration</h5>
+                <div id="durationIndicator" style="width:100%; padding-bottom: 0.5cm;"></div>
+                {% else %}
+                <div class=" alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No duration data available.
+                </div>
+                {% endif %}
+
+                {% if fx_indicator_json %}
+                <h5 class="card-title">FX</h5>
+                <div id="fxIndicator" style="width:100%; padding-bottom: 0.5cm;"></div>
+                {% else %}
+                <div class="alert alert-info m-0">
+                    <i class="fas fa-info-circle me-2"></i>No FX data available.
+                </div>
+                {% endif %}
+            
             </div>
         </div>
 
@@ -627,24 +658,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var performanceData = JSON.parse('{{ performance_plot_json | safe }}');
-        var config = {
-            displayModeBar: false,
-            responsive: true,
-            staticPlot: false,
-            displaylogo: false
-        };
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
 
-        Plotly.newPlot('performanceChart', performanceData.data, performanceData.layout, config);
+            Plotly.newPlot('performanceChart', performanceData.data, performanceData.layout, config);
 
-        // Make chart responsive with debouncing
-        var resizeTimeout;
-        window.addEventListener('resize', function () {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                Plotly.Plots.resize('performanceChart');
-            }, 100);
+            // Make chart responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('performanceChart');
+                }, 100);
+            });
         });
-});
     </script>
     {% endif %}
 
@@ -653,24 +684,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var betaData = JSON.parse('{{ beta_indicator_json | safe }}');
-        var config = {
-            displayModeBar: false,
-            responsive: true,
-            staticPlot: false,
-            displaylogo: false
-        };
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
 
-        Plotly.newPlot('betaIndicator', betaData.data, betaData.layout, config);
+            Plotly.newPlot('betaIndicator', betaData.data, betaData.layout, config);
 
-        // Make indicator responsive with debouncing
-        var resizeTimeout;
-        window.addEventListener('resize', function () {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                Plotly.Plots.resize('betaIndicator');
-            }, 100);
+            // Make indicator responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('betaIndicator');
+                }, 100);
+            });
         });
-});
     </script>
     {% endif %}
 
@@ -680,24 +711,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var durationData = JSON.parse('{{ duration_indicator_json | safe }}');
-        var config = {
-            displayModeBar: false,
-            responsive: true,
-            staticPlot: false,
-            displaylogo: false
-        };
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
 
-        Plotly.newPlot('durationIndicator', durationData.data, durationData.layout, config);
+            Plotly.newPlot('durationIndicator', durationData.data, durationData.layout, config);
 
-        // Make indicator responsive with debouncing
-        var resizeTimeout;
-        window.addEventListener('resize', function () {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                Plotly.Plots.resize('durationIndicator');
-            }, 100);
+            // Make indicator responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('durationIndicator');
+                }, 100);
+            });
         });
-});
     </script>
     {% endif %}
 
@@ -707,24 +738,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var fxData = JSON.parse('{{ fx_indicator_json | safe }}');
-        var config = {
-            displayModeBar: false,
-            responsive: true,
-            staticPlot: false,
-            displaylogo: false
-        };
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
 
-        Plotly.newPlot('fxIndicator', fxData.data, fxData.layout, config);
+            Plotly.newPlot('fxIndicator', fxData.data, fxData.layout, config);
 
-        // Make indicator responsive with debouncing
-        var resizeTimeout;
-        window.addEventListener('resize', function () {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                Plotly.Plots.resize('fxIndicator');
-            }, 100);
+            // Make indicator responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('fxIndicator');
+                }, 100);
+            });
         });
-});
     </script>
     {% endif %}
 
@@ -734,24 +765,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var developedData = JSON.parse('{{ developed_pie_json | safe }}');
-        var config = {
-            displayModeBar: false,
-            responsive: true,
-            staticPlot: false,
-            displaylogo: false
-        };
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
 
-        Plotly.newPlot('developedIndicator', developedData.data, developedData.layout, config);
+            Plotly.newPlot('developedIndicator', developedData.data, developedData.layout, config);
 
-        // Make indicator responsive with debouncing
-        var resizeTimeout;
-        window.addEventListener('resize', function () {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                Plotly.Plots.resize('developedIndicator');
-            }, 100);
+            // Make indicator responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('developedIndicator');
+                }, 100);
+            });
         });
-});
     </script>
     {% endif %}
 
@@ -761,24 +792,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var ratingData = JSON.parse('{{ rating_pie_json | safe }}');
-        var config = {
-            displayModeBar: false,
-            responsive: true,
-            staticPlot: false,
-            displaylogo: false
-        };
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
 
-        Plotly.newPlot('ratingIndicator', ratingData.data, ratingData.layout, config);
+            Plotly.newPlot('ratingIndicator', ratingData.data, ratingData.layout, config);
 
-        // Make indicator responsive with debouncing
-        var resizeTimeout;
-        window.addEventListener('resize', function () {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                Plotly.Plots.resize('ratingIndicator');
-            }, 100);
+            // Make indicator responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('ratingIndicator');
+                }, 100);
+            });
         });
-});
     </script>
     {% endif %}
 
@@ -788,24 +819,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var bondTypeData = JSON.parse('{{ bond_type_pie_json | safe }}');
-        var config = {
-            displayModeBar: false,
-            responsive: true,
-            staticPlot: false,
-            displaylogo: false
-        };
+            var config = {
+                displayModeBar: false,
+                responsive: true,
+                staticPlot: false,
+                displaylogo: false
+            };
 
-        Plotly.newPlot('bondTypeIndicator', bondTypeData.data, bondTypeData.layout, config);
+            Plotly.newPlot('bondTypeIndicator', bondTypeData.data, bondTypeData.layout, config);
 
-        // Make indicator responsive with debouncing
-        var resizeTimeout;
-        window.addEventListener('resize', function () {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                Plotly.Plots.resize('bondTypeIndicator');
-            }, 100);
+            // Make indicator responsive with debouncing
+            var resizeTimeout;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function () {
+                    Plotly.Plots.resize('bondTypeIndicator');
+                }, 100);
+            });
         });
-});
     </script>
     {% endif %}
 
@@ -816,10 +847,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const d = JSON.parse('{{ strategic_sunburst_json | safe }}');
-        const cfg = { displayModeBar: false, responsive: true, staticPlot: false, displaylogo: false };
-        Plotly.newPlot('strategicSunburst', d.data, d.layout, cfg);
-        window.addEventListener('resize', () => Plotly.Plots.resize('strategicSunburst'));
-});
+            const cfg = { displayModeBar: false, responsive: true, staticPlot: false, displaylogo: false };
+            Plotly.newPlot('strategicSunburst', d.data, d.layout, cfg);
+            window.addEventListener('resize', () => Plotly.Plots.resize('strategicSunburst'));
+        });
     </script>
     {% endif %}
 
@@ -828,10 +859,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const d = JSON.parse('{{ actual_sunburst_json | safe }}');
-        const cfg = { displayModeBar: false, responsive: true, staticPlot: false, displaylogo: false };
-        Plotly.newPlot('actualSunburst', d.data, d.layout, cfg);
-        window.addEventListener('resize', () => Plotly.Plots.resize('actualSunburst'));
-});
+            const cfg = { displayModeBar: false, responsive: true, staticPlot: false, displaylogo: false };
+            Plotly.newPlot('actualSunburst', d.data, d.layout, cfg);
+            window.addEventListener('resize', () => Plotly.Plots.resize('actualSunburst'));
+        });
     </script>
     {% endif %}
 
